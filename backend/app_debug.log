@@ -1,0 +1,13 @@
+2026-01-29 13:21:46,423 - apscheduler.scheduler - INFO - Scheduler has been shut down
+2026-01-29 13:21:46,424 - src.infrastructure.services.scheduler_service - INFO - Scheduler shutdown.
+2026-01-29 13:21:46,424 - src.main - INFO - Shutting down application...
+2026-01-29 13:21:46,424 - src.main - INFO - Shutting down application...
+2026-01-29 13:21:49,316 - src.main - INFO - Starting application. Repository mode: sqlite
+2026-01-29 13:21:49,316 - src.main - INFO - Starting application. Repository mode: sqlite
+2026-01-29 13:21:49,318 - src.main - INFO - Database initialized (tables created/verified)
+2026-01-29 13:21:49,318 - src.main - INFO - Database initialized (tables created/verified)
+2026-01-29 13:21:49,382 - src.infrastructure.security.email_service - INFO - SMTPEmailService initialized: host=sandbox.smtp.mailtrap.io, port=2525, user=ddae4106309476, sender=test@stockmaster.com
+2026-01-29 13:21:49,389 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-29 13:21:49,391 - apscheduler.scheduler - INFO - Added job "SchedulerService.check_return_deadlines" to job store "default"
+2026-01-29 13:21:49,392 - apscheduler.scheduler - INFO - Scheduler started
+2026-01-29 13:21:49,393 - src.infrastructure.services.scheduler_service - INFO - Scheduler started. Return deadline check job scheduled daily at 8:00 AM.
