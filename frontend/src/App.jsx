@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Plus, Search, LogOut, Github, TrendingUp, AlertCircle, History, LayoutDashboard } from 'lucide-react';
+import { Package, Plus, Search, LogOut, Github, TrendingUp, AlertCircle, History, LayoutDashboard, ShoppingBag, ShoppingCart, BarChart2 } from 'lucide-react';
 import { useProducts } from './hooks/useProducts';
 import { DashboardStats } from './components/Dashboard/DashboardStats';
 import { ProductTable } from './components/Dashboard/ProductTable';
@@ -13,12 +13,15 @@ import { usePurchasing } from './hooks/usePurchasing';
 import { PurchasingDashboard } from './components/Dashboard/PurchasingDashboard';
 import { PurchaseOrderForm } from './components/Forms/PurchaseOrderForm';
 import { SupplierForm } from './components/Forms/SupplierForm';
-import { ShoppingBag } from 'lucide-react';
+import { useSales } from './hooks/useSales';
+import { SalesDashboard } from './components/Dashboard/SalesDashboard';
+import { SalesOrderForm } from './components/Forms/SalesOrderForm';
+import { AnalyticsDashboard } from './components/Dashboard/AnalyticsDashboard';
 
 function App() {
   const navigate = useNavigate();
   const [isAuthChecking, setIsAuthChecking] = useState(true);
-  const [activeTab, setActiveTab] = useState('inventory'); // 'inventory', 'movements', or 'purchasing'
+  const [activeTab, setActiveTab] = useState('inventory'); // 'purchasing', 'sales', 'inventory', or 'movements'
 
   React.useEffect(() => {
     const token = localStorage.getItem('token');
@@ -44,18 +47,34 @@ function App() {
 
   const {
     suppliers,
-    orders,
-    kpis,
+    orders: purchaseOrders,
+    kpis: purchaseKpis,
     loading: purchasingLoading,
+    error: purchasingError,
     createSupplier,
-    createOrder,
-    updateOrder
+    updateSupplier,
+    deleteSupplier,
+    createOrder: createPurchaseOrder,
+    updateOrder: updatePurchaseOrder
   } = usePurchasing();
+
+  const {
+    orders: salesOrders,
+    kpis: salesKpis,
+    loading: salesLoading,
+    error: salesError,
+    createOrder: createSalesOrder,
+    updateOrder: updateSalesOrder,
+    deleteOrder: deleteSalesOrder,
+    refresh: refreshSales
+  } = useSales();
 
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showOrderForm, setShowOrderForm] = useState(false);
+  const [showSalesOrderForm, setShowSalesOrderForm] = useState(false);
+  const [editingSalesOrder, setEditingSalesOrder] = useState(null);
   const [showSupplierForm, setShowSupplierForm] = useState(false);
 
   // Modals state
@@ -64,7 +83,9 @@ function App() {
 
   // State for delete confirmation
   const [productToDelete, setProductToDelete] = useState(null);
+  const [salesOrderToDelete, setSalesOrderToDelete] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showSalesDeleteModal, setShowSalesDeleteModal] = useState(false);
 
   const filteredProducts = products.filter(p =>
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -114,6 +135,7 @@ function App() {
   const handleSell = async (productId, data) => {
     try {
       await updateStock(productId, data, 'sell');
+      refreshSales(); // Refresh orders to remove completed one
       setProductToSell(null);
     } catch (err) {
       throw err;
@@ -122,10 +144,33 @@ function App() {
 
   const handleReplenish = async (productId, data) => {
     try {
-      await updateStock(productId, data, 'receive');
+      // Usamos el subtipo 'return' para distinguir devoluciones de compras
+      await updateStock(productId, data, 'return');
       setProductToReplenish(null);
     } catch (err) {
       throw err;
+    }
+  };
+
+  const handleEditSalesOrder = (order) => {
+    setEditingSalesOrder(order);
+    setShowSalesOrderForm(true);
+  };
+
+  const handleDeleteSalesOrder = (id) => {
+    setSalesOrderToDelete(id);
+    setShowSalesDeleteModal(true);
+  };
+
+  const handleConfirmDeleteSalesOrder = async () => {
+    if (salesOrderToDelete) {
+      try {
+        await deleteSalesOrder(salesOrderToDelete);
+        setSalesOrderToDelete(null);
+        setShowSalesDeleteModal(false);
+      } catch (err) {
+        alert(err.message);
+      }
     }
   };
 
@@ -143,163 +188,186 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen text-slate-900 bg-white selection:bg-emerald-100 selection:text-emerald-900">
-      <div className="max-w-7xl mx-auto p-6 lg:p-12 relative">
-        {/* Navbar */}
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-16 animate-slide-in">
-          <div className="flex items-center space-x-5">
-            <div className="bg-emerald-600 p-4 rounded-2xl shadow-lg active:scale-95 transition-transform">
-              <Package size={34} className="text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-none">Collie Almacenes</h1>
-              <p className="text-xs text-slate-500 font-bold uppercase tracking-[0.25em] mt-2">Gestión Inteligente de Activos</p>
-            </div>
+    <div className="min-h-screen bg-white font-['Inter'] text-[#3c4043]">
+      {/* Google-style Header */}
+      <header className="sticky top-0 z-40 bg-white border-b border-[#dadce0] px-6 h-16 flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <div className="p-2 text-[#1a73e8] hover:bg-[#f1f3f4] rounded-full transition-colors cursor-pointer">
+            <LayoutDashboard size={24} />
           </div>
-
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={handleLogout}
-              className="flex items-center space-x-2 px-6 py-3 rounded-2xl bg-rose-600 hover:bg-rose-500 transition-all text-sm font-bold text-white shadow-lg active:scale-95"
-            >
-              <LogOut size={18} />
-              <span>Cerrar Sesión</span>
-            </button>
-          </div>
-        </header>
-
-        {/* Stats Section */}
-        <section className="mb-12 animate-fade-in">
-          <DashboardStats products={products} />
-        </section>
-
-        {/* Tab Navigation */}
-        <div className="flex items-center space-x-2 mb-10 bg-slate-50 p-1.5 rounded-2xl w-fit border border-slate-200 animate-fade-in shadow-sm">
-          <button
-            onClick={() => setActiveTab('inventory')}
-            className={`flex items-center space-x-2 px-8 py-3.5 rounded-xl text-sm font-black transition-all ${activeTab === 'inventory'
-              ? 'bg-emerald-600 text-white shadow-md'
-              : 'text-slate-500 hover:text-slate-800 hover:bg-white'
-              }`}
-          >
-            <LayoutDashboard size={18} />
-            <span className="tracking-widest">INVENTARIO</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('movements')}
-            className={`flex items-center space-x-2 px-8 py-3.5 rounded-xl text-sm font-black transition-all ${activeTab === 'movements'
-              ? 'bg-emerald-600 text-white shadow-md'
-              : 'text-slate-500 hover:text-slate-800 hover:bg-white'
-              }`}
-          >
-            <History size={18} />
-            <span className="tracking-widest">TRAZABILIDAD</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('purchasing')}
-            className={`flex items-center space-x-2 px-8 py-3.5 rounded-xl text-sm font-black transition-all ${activeTab === 'purchasing'
-              ? 'bg-emerald-600 text-white shadow-md'
-              : 'text-slate-500 hover:text-slate-800 hover:bg-white'
-              }`}
-          >
-            <ShoppingBag size={18} />
-            <span className="tracking-widest">COMPRAS</span>
-          </button>
+          <span className="text-[22px] font-medium text-[#202124] tracking-tight ml-1">Collie <span className="text-[#5f6368] font-normal">Inventario</span></span>
         </div>
 
-        {/* Main Content Area */}
-        <main className="space-y-8 animate-fade-in">
-          {activeTab === 'inventory' ? (
-            <>
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                <div className="relative flex-1 max-w-xl group">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" size={20} />
-                  <input
-                    type="text"
-                    placeholder="Filtrar por nombre, descripción o SKU..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-white border-2 border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-sm font-medium focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-400 shadow-sm"
-                  />
-                </div>
+        <div className="flex-1 max-w-2xl mx-12">
+          <div className="relative group">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#5f6368]">
+              <Search size={18} />
+            </div>
+            <input
+              type="text"
+              placeholder="Buscar en inventario..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-[#f1f3f4] border-transparent border-2 focus:bg-white focus:border-[#1a73e8] focus:ring-0 rounded-lg py-2.5 pl-11 pr-4 text-sm transition-all outline-none"
+            />
+          </div>
+        </div>
 
-                <button
-                  onClick={() => {
-                    setEditingProduct(null);
-                    setShowForm(true);
-                  }}
-                  className="group flex items-center justify-center space-x-3 bg-emerald-600 hover:bg-emerald-500 text-white px-10 py-4 rounded-2xl font-black shadow-lg transition-all active:scale-95"
-                >
-                  <Plus size={22} className="group-hover:rotate-90 transition-transform duration-300" />
-                  <span className="tracking-widest uppercase">Nuevo Producto</span>
-                </button>
-              </div>
+        <div className="flex items-center space-x-4">
+          <div className="text-right hidden sm:block">
+            <p className="text-xs font-semibold text-[#202124]">Jefe de Almacén</p>
+            <p className="text-[10px] text-[#5f6368] uppercase tracking-wider">Administrador</p>
+          </div>
+          <button
+            onClick={() => {
+              localStorage.removeItem('token');
+              navigate('/login');
+            }}
+            className="p-2 text-[#5f6368] hover:bg-[#fce8e6] hover:text-[#d93025] rounded-full transition-all"
+            title="Cerrar Sesión"
+          >
+            <LogOut size={20} />
+          </button>
+        </div>
+      </header>
 
-              {error && (
-                <div className="p-6 rounded-3xl bg-rose-50 border-2 border-rose-100 text-rose-600 text-sm flex items-center space-x-4 animate-shake">
-                  <div className="p-2 bg-rose-600 rounded-xl">
-                    <AlertCircle size={24} className="text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-black uppercase tracking-tight">Error del Sistema</p>
-                    <p className="font-medium opacity-80">{error}</p>
-                  </div>
-                  <button onClick={refresh} className="px-6 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-bold text-xs transition-colors shadow-sm active:scale-95">Reintentar</button>
-                </div>
+      <main className="max-w-[1400px] mx-auto p-6 md:p-8">
+        {/* Navigation Tabs - Google Style */}
+        <div className="flex items-center space-x-1 border-b border-[#dadce0] mb-8">
+          {[
+            { id: 'purchasing', label: 'Compras', icon: ShoppingBag },
+            { id: 'sales', label: 'Ventas', icon: ShoppingCart },
+            { id: 'business', label: 'Negocio', icon: BarChart2 },
+            { id: 'inventory', label: 'Inventario', icon: Package },
+            { id: 'movements', label: 'Movimientos', icon: History }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center space-x-3 px-6 py-4 text-sm font-medium transition-all relative ${activeTab === tab.id
+                ? 'text-[#1a73e8]'
+                : 'text-[#5f6368] hover:bg-[#f8f9fa] rounded-t-lg'
+                }`}
+            >
+              <tab.icon size={18} />
+              <span>{tab.label}</span>
+              {activeTab === tab.id && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#1a73e8] rounded-t-full"></div>
               )}
+            </button>
+          ))}
+        </div>
 
-              <ProductTable
-                products={filteredProducts}
-                loading={loading}
-                onReplenish={(product) => setProductToReplenish(product)}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onSell={setProductToSell}
-              />
-            </>
-          ) : activeTab === 'movements' ? (
-            <>
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-4">
+        {activeTab === 'purchasing' && (
+          <div className="animate-fade-in">
+            <PurchasingDashboard
+              suppliers={suppliers}
+              orders={purchaseOrders}
+              kpis={purchaseKpis}
+              loading={purchasingLoading}
+              error={purchasingError}
+              onAddSupplier={() => setShowSupplierForm(true)}
+              onUpdateSupplier={updateSupplier}
+              onDeleteSupplier={deleteSupplier}
+              onAddOrder={() => setShowOrderForm(true)}
+              onAddProduct={() => {
+                setEditingProduct(null);
+                setShowForm(true);
+              }}
+              onUpdateOrderStatus={async (id, data) => {
+                if (data instanceof FormData) {
+                  await updatePurchaseOrder(id, data);
+                  refresh();
+                } else if (typeof data === 'string') {
+                  const is_rejected = data === 'REJECTED';
+                  const is_arrived = data === 'ARRIVED';
+
+                  await updatePurchaseOrder(id, {
+                    status: data,
+                    is_rejected,
+                    actual_delivery_date: (is_rejected || is_arrived) ? new Date().toISOString() : null,
+                    rejection_reason: is_rejected ? "Rechazo manual por usuario" : null
+                  });
+                }
+              }}
+            />
+          </div>
+        )}
+        {activeTab === 'sales' && (
+          <div className="animate-fade-in">
+            <SalesDashboard
+              orders={salesOrders}
+              kpis={salesKpis}
+              loading={salesLoading}
+              error={salesError}
+              onAddOrder={() => setShowSalesOrderForm(true)}
+              onEditOrder={handleEditSalesOrder}
+              onDeleteOrder={handleDeleteSalesOrder}
+            />
+          </div>
+        )}
+        {activeTab === 'business' && (
+          <AnalyticsDashboard />
+        )}
+        {activeTab === 'inventory' && (
+          <div className="space-y-8 animate-fade-in">
+            {/* Stats Summary */}
+            <DashboardStats products={products} movements={movements} />
+
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-medium text-[#202124]">Catálogo de Productos</h2>
+                <p className="text-sm text-[#5f6368] mt-1">Gestiona las existencias y detalles técnicos de tu almacén</p>
+              </div>
+            </div>
+
+            {error ? (
+              <div className="bg-[#fce8e6] border border-[#f5c2c7] text-[#d93025] p-6 rounded-2xl flex items-center space-x-4">
+                <AlertCircle size={24} />
                 <div>
-                  <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-none">Registro de Movimientos</h2>
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-[0.2em] mt-2">Trazabilidad completa de operaciones</p>
+                  <p className="font-bold">Error al cargar inventario</p>
+                  <p className="text-sm opacity-90">{error}</p>
                 </div>
                 <button
                   onClick={refresh}
-                  className="px-6 py-3 rounded-xl bg-orange-500 hover:bg-orange-400 text-white text-xs font-black tracking-widest uppercase transition-all shadow-md active:scale-95"
+                  className="ml-auto bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-xs font-bold uppercase transition-colors"
                 >
-                  Actualizar Trazabilidad
+                  Reintentar
                 </button>
               </div>
+            ) : (
+              <div className="bg-white border border-[#dadce0] rounded-2xl overflow-hidden shadow-sm">
+                <ProductTable
+                  products={filteredProducts}
+                  loading={loading}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onReturn={(p) => setProductToReplenish(p)}
+                  onSell={(p) => setProductToSell(p)}
+                />
+              </div>
+            )}
+          </div>
+        )}
+        {activeTab === 'movements' && (
+          <div className="space-y-6 animate-fade-in">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-medium text-[#202124]">Historial de Movimientos</h2>
+                <p className="text-sm text-[#5f6368] mt-1">Trazabilidad completa de entradas y salidas de almacén</p>
+              </div>
+            </div>
+            <div className="bg-white border border-[#dadce0] rounded-2xl overflow-hidden shadow-sm">
               <MovementTable movements={movements} loading={movementsLoading} />
-            </>
-          ) : (
-            <PurchasingDashboard
-              suppliers={suppliers}
-              orders={orders}
-              kpis={kpis}
-              loading={purchasingLoading}
-              onAddOrder={() => setShowOrderForm(true)}
-              onAddSupplier={() => setShowSupplierForm(true)}
-              onUpdateOrderStatus={(id, status) => {
-                const is_rejected = status === 'REJECTED';
-                updateOrder(id, {
-                  status,
-                  is_rejected,
-                  actual_delivery_date: new Date().toISOString(),
-                  rejection_reason: is_rejected ? "Rechazo manual por usuario" : null
-                });
-              }}
-            />
-          )}
-        </main>
+            </div>
+          </div>
+        )}
+      </main>
 
-        <footer className="mt-32 py-8 border-t border-slate-200 text-center">
-          <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Collie Almacenes PRO • 2026</p>
-        </footer>
-      </div>
+      <footer className="mt-12 py-8 border-t border-[#dadce0] text-center">
+        <p className="text-[#5f6368] text-xs font-medium">Collie Almacenes • © 2026 • Design by Google Style</p>
+      </footer>
 
-      {/* Modals & Overlays */}
       {showForm && (
         <ProductForm
           onClose={() => {
@@ -315,6 +383,7 @@ function App() {
       {productToSell && (
         <SellProductModal
           product={productToSell}
+          salesOrders={salesOrders.filter(so => so.status === 'PENDING')}
           onConfirm={handleSell}
           onClose={() => setProductToSell(null)}
           loading={loading}
@@ -338,8 +407,8 @@ function App() {
             setProductToDelete(null);
           }}
           onConfirm={handleConfirmDelete}
-          title="Confirmar Eliminación"
-          message={`¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer y el registro desaparecerá permanentemente.`}
+          title="Eliminar producto"
+          message={`¿Quieres eliminar este producto permanentemente? Esta acción no se puede deshacer.`}
         />
       )}
 
@@ -350,7 +419,7 @@ function App() {
           loading={purchasingLoading}
           onClose={() => setShowOrderForm(false)}
           onSubmit={async (data) => {
-            await createOrder(data);
+            await createPurchaseOrder(data);
             setShowOrderForm(false);
           }}
         />
@@ -359,11 +428,52 @@ function App() {
       {showSupplierForm && (
         <SupplierForm
           suppliers={suppliers}
+          products={products}
           loading={purchasingLoading}
           onClose={() => setShowSupplierForm(false)}
           onSubmit={async (data) => {
             await createSupplier(data);
+            setShowSupplierForm(false);
           }}
+          onUpdate={async (id, data) => {
+            await updateSupplier(id, data);
+            setShowSupplierForm(false);
+          }}
+          onDelete={deleteSupplier}
+        />
+      )}
+
+      {showSalesOrderForm && (
+        <SalesOrderForm
+          products={products}
+          loading={salesLoading}
+          onClose={() => {
+            setShowSalesOrderForm(false);
+            setEditingSalesOrder(null);
+          }}
+          initialData={editingSalesOrder}
+          onSubmit={async (data) => {
+            if (editingSalesOrder) {
+              await updateSalesOrder(editingSalesOrder.id, data);
+            } else {
+              await createSalesOrder(data);
+            }
+            setShowSalesOrderForm(false);
+            setEditingSalesOrder(null);
+          }}
+        />
+      )}
+
+      {showSalesDeleteModal && (
+        <ConfirmationModal
+          isOpen={showSalesDeleteModal}
+          onClose={() => {
+            setShowSalesDeleteModal(false);
+            setSalesOrderToDelete(null);
+          }}
+          onConfirm={handleConfirmDeleteSalesOrder}
+          title="Eliminar orden de venta"
+          message="¿Seguro que deseas eliminar esta orden de venta? Esta acción no se puede deshacer."
         />
       )}
     </div>

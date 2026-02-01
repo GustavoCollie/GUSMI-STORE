@@ -31,6 +31,8 @@ class Product:
     description: str
     stock: int
     sku: str
+    image_path: Optional[str] = None
+    tech_sheet_path: Optional[str] = None
     id: UUID = field(default_factory=uuid4)
     updated_at: datetime = field(default_factory=get_local_time)
     
@@ -100,7 +102,7 @@ class Movement:
     """
     product_id: UUID
     quantity: int
-    type: str  # 'ENTRY' o 'EXIT'
+    type: str  # 'INGRESO', 'VENTA', 'CONSUMO INTERNO', 'RETURN'
     reference: str  # Orden de Compra, Factura, etc.
     document_path: Optional[str] = None
     applicant: Optional[str] = None
@@ -108,6 +110,9 @@ class Movement:
     is_returnable: bool = False
     return_deadline: Optional[datetime] = None
     recipient_email: Optional[str] = None
+    sales_order_id: Optional[UUID] = None
+    parent_id: Optional[UUID] = None
+    product_name: Optional[str] = None
     id: UUID = field(default_factory=uuid4)
     date: datetime = field(default_factory=get_local_time)
 

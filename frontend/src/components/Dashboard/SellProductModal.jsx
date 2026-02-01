@@ -1,8 +1,10 @@
 import React, { useState, useRef } from 'react';
-import { X, Upload, FileText, User, Users, Clock, Calendar, Mail, AlertCircle, ShoppingCart } from 'lucide-react';
+import { X, Upload, FileText, User, Users, Clock, AlertCircle, ShoppingCart, Tag, Mail, Calendar } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
-export const SellProductModal = ({ product, onClose, onConfirm, loading }) => {
+export const SellProductModal = ({ product, salesOrders = [], onClose, onConfirm, loading }) => {
+    const [exitType, setExitType] = useState('internal'); // 'internal' or 'sale'
+    const [selectedSalesOrderId, setSelectedSalesOrderId] = useState('');
     const [quantity, setQuantity] = useState(1);
     const [reference, setReference] = useState('');
     const [applicant, setApplicant] = useState('');
@@ -28,40 +30,37 @@ export const SellProductModal = ({ product, onClose, onConfirm, loading }) => {
             setError(`Stock insuficiente. Disponible: ${product.stock}`);
             return;
         }
-        if (!reference.trim()) {
-            setError("La referencia es obligatoria");
-            return;
-        }
-        if (!applicant.trim()) {
+        if (exitType === 'internal' && !applicant.trim()) {
             setError("El solicitante es obligatorio");
             return;
         }
-        if (!applicantArea.trim()) {
+        if (exitType === 'internal' && !applicantArea.trim()) {
             setError("El área solicitante es obligatoria");
             return;
         }
-        if (isReturnable && !returnDeadline) {
-            setError("La fecha de retorno es obligatoria para productos devolutivos");
+        if (exitType === 'sale' && !selectedSalesOrderId) {
+            setError("Debe seleccionar una orden de venta");
             return;
         }
-        if (isReturnable && !recipientEmail.trim()) {
-            setError("El email del receptor es obligatorio para productos devolutivos");
+        if (exitType === 'sale' && !recipientEmail.trim()) {
+            setError("El correo del cliente es obligatorio");
             return;
         }
-        if (recipientEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail)) {
-            setError("El formato del email no es válido");
+        if (exitType === 'sale' && !returnDeadline) { // Usamos returnDeadline para "fecha de entrega" si es venta? No, mejor no mezclar.
+            setError("La fecha de entrega es obligatoria");
             return;
         }
 
         try {
             await onConfirm(product.id, {
                 quantity: parseInt(quantity),
-                reference,
-                applicant,
-                applicant_area: applicantArea,
-                is_returnable: isReturnable,
-                return_deadline: isReturnable ? returnDeadline : null,
-                recipient_email: isReturnable && recipientEmail ? recipientEmail : null,
+                reference: exitType === 'sale' ? `VENTA: OV-${selectedSalesOrderId.substring(0, 8)}` : reference,
+                applicant: exitType === 'sale' ? "CLIENTE EXTERNO" : applicant,
+                applicant_area: exitType === 'sale' ? "VENTAS" : applicantArea,
+                is_returnable: exitType === 'sale' ? false : isReturnable,
+                return_deadline: exitType === 'sale' ? returnDeadline : (isReturnable ? returnDeadline : null),
+                recipient_email: recipientEmail || null,
+                sales_order_id: exitType === 'sale' ? selectedSalesOrderId : null,
                 file
             });
         } catch (err) {
@@ -76,218 +75,293 @@ export const SellProductModal = ({ product, onClose, onConfirm, loading }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in/20">
-            <div
-                className="bg-white/95 border border-slate-200 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-scale-in"
-                onClick={(e) => e.stopPropagation()}
-            >
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#202124]/40 backdrop-blur-[2px] animate-fade-in">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[560px] overflow-hidden animate-scale-in">
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-orange-50">
+                <div className="px-8 py-6 border-b border-[#dadce0] flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-orange-600 rounded-xl">
-                            <ShoppingCart className="text-white" size={20} />
+                        <div className="bg-[#fef7e0] text-[#f9ab00] p-2.5 rounded-lg">
+                            <ShoppingCart size={24} />
                         </div>
                         <div>
-                            <h3 className="text-lg font-bold text-slate-900">Registrar Salida</h3>
-                            <p className="text-xs text-orange-600 font-black uppercase tracking-widest">Salida de Stock de Almacén</p>
+                            <h3 className="text-xl font-medium text-[#202124]">Registrar Salida</h3>
+                            <p className="text-xs text-[#5f6368] mt-0.5 font-medium">Salida de mercadería del almacén</p>
                         </div>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-full transition-colors"
-                    >
-                        <X size={20} />
+                    <button onClick={onClose} className="p-2 hover:bg-[#f1f3f4] rounded-full transition-colors">
+                        <X size={20} className="text-[#5f6368]" />
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-6 space-y-5">
-                    {/* ... (rest of the content remains the same, but using emerald focus rings) ... */}
-                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 flex justify-between items-center shadow-sm">
+                <form onSubmit={handleSubmit} className="p-8 space-y-6 overflow-y-auto max-h-[75vh]">
+                    {/* Item Context */}
+                    <div className="p-4 bg-[#f8f9fa] rounded-xl border border-[#dadce0] flex items-center justify-between">
                         <div>
-                            <h4 className="font-bold text-slate-800 uppercase tracking-tight">{product.name}</h4>
-                            <div className="flex items-center space-x-2 mt-1">
-                                <span className={cn(
-                                    "text-[10px] font-bold px-2 py-0.5 rounded-full border",
-                                    product.stock > 5
-                                        ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                                        : "bg-orange-50 text-orange-600 border-orange-100"
-                                )}>
-                                    Stock disponible: {product.stock}
-                                </span>
-                            </div>
+                            <span className="text-[10px] font-bold text-[#5f6368] uppercase tracking-wider">PRODUCTO</span>
+                            <h4 className="text-sm font-medium text-[#202124]">{product.name}</h4>
                         </div>
-                        <div className="text-[10px] font-mono text-slate-400 font-bold uppercase">
-                            {product.sku}
+                        <div className="text-right">
+                            <span className="text-[10px] font-bold text-[#5f6368] uppercase tracking-wider">STOCK DISPONIBLE</span>
+                            <p className="text-sm font-medium text-[#f9ab00]">{product.stock} uds</p>
                         </div>
+                    </div>
+
+                    {/* Exit Type Selection */}
+                    <div className="flex items-center space-x-2 p-1 bg-[#f1f3f4] rounded-xl border border-[#dadce0]">
+                        <button
+                            type="button"
+                            onClick={() => setExitType('internal')}
+                            className={cn(
+                                "flex-1 flex items-center justify-center space-x-2 py-2.5 rounded-lg text-sm font-medium transition-all",
+                                exitType === 'internal' ? "bg-white shadow-sm text-[#1a73e8]" : "text-[#5f6368] hover:bg-white/50"
+                            )}
+                        >
+                            <Users size={18} />
+                            <span>Consumo Interno</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setExitType('sale')}
+                            className={cn(
+                                "flex-1 flex items-center justify-center space-x-2 py-2.5 rounded-lg text-sm font-medium transition-all",
+                                exitType === 'sale' ? "bg-white shadow-sm text-[#1a73e8]" : "text-[#5f6368] hover:bg-white/50"
+                            )}
+                        >
+                            <ShoppingCart size={18} />
+                            <span>Venta Directa</span>
+                        </button>
                     </div>
 
                     {error && (
-                        <div className="bg-rose-50 border border-rose-100 rounded-xl p-3 flex items-center text-rose-600 text-sm animate-shake">
-                            <AlertCircle size={16} className="mr-2 flex-shrink-0" />
-                            {error}
+                        <div className="bg-[#fce8e6] border border-[#f5c2c7] rounded-xl p-4 flex items-center text-[#d93025] text-sm animate-shake">
+                            <AlertCircle size={18} className="mr-3 flex-shrink-0" />
+                            <span className="font-medium">{error}</span>
                         </div>
                     )}
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Cantidad</label>
-                            <input
-                                type="number"
-                                min="1"
-                                max={product.stock}
-                                value={quantity}
-                                onChange={(e) => setQuantity(e.target.value)}
-                                className="w-full bg-white border-2 border-slate-100 rounded-xl px-4 py-3 text-slate-900 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all placeholder:text-slate-400 shadow-sm"
-                                placeholder="0"
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Referencia / Guía</label>
-                            <input
-                                type="text"
-                                value={reference}
-                                onChange={(e) => setReference(e.target.value)}
-                                className="w-full bg-white border-2 border-slate-100 rounded-xl px-4 py-3 text-slate-900 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all placeholder:text-slate-400 shadow-sm"
-                                placeholder="GR-2026-001"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Solicitante</label>
-                            <div className="relative group">
-                                <User className="absolute left-3 top-4 text-slate-400 group-focus-within:text-orange-500 transition-colors" size={16} />
-                                <input
-                                    type="text"
-                                    value={applicant}
-                                    onChange={(e) => setApplicant(e.target.value)}
-                                    className="w-full bg-white border-2 border-slate-100 rounded-xl pl-10 pr-4 py-3.5 text-slate-900 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all placeholder:text-slate-400 shadow-sm"
-                                    placeholder="Nombre"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Área / Dept.</label>
-                            <div className="relative group">
-                                <Users className="absolute left-3 top-4 text-slate-400 group-focus-within:text-orange-500 transition-colors" size={16} />
-                                <input
-                                    type="text"
-                                    value={applicantArea}
-                                    onChange={(e) => setApplicantArea(e.target.value)}
-                                    className="w-full bg-white border-2 border-slate-100 rounded-xl pl-10 pr-4 py-3.5 text-slate-900 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all placeholder:text-slate-400 shadow-sm"
-                                    placeholder="Sistemas"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-4">
-                            <label className={cn(
-                                "flex items-center justify-between p-4 rounded-xl border-2 transition-all cursor-pointer shadow-sm",
-                                isReturnable
-                                    ? "bg-rose-50 border-rose-200"
-                                    : "bg-white border-slate-100 hover:bg-slate-50"
-                            )}>
-                                <div className="flex items-center space-x-3">
-                                    <Clock size={18} className={isReturnable ? "text-rose-600" : "text-slate-400"} />
-                                    <div className="flex flex-col">
-                                        <span className={cn("text-xs font-black uppercase tracking-widest", isReturnable ? "text-rose-900" : "text-slate-600")}>
-                                            Devolutivo
-                                        </span>
-                                    </div>
-                                </div>
-                                <input
-                                    type="checkbox"
-                                    checked={isReturnable}
-                                    onChange={(e) => setIsReturnable(e.target.checked)}
-                                    className="w-5 h-5 rounded-lg border-slate-300 text-rose-600 focus:ring-rose-500 transition-all"
-                                />
-                            </label>
-
-                            {isReturnable && (
-                                <div className="space-y-4 animate-fade-in p-4 bg-slate-50 rounded-2xl border-2 border-slate-100">
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Fecha Retorno</label>
-                                        <input
-                                            type="date"
-                                            value={returnDeadline}
-                                            onChange={(e) => setReturnDeadline(e.target.value)}
-                                            className="w-full bg-white border-2 border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 outline-none transition-all"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Correo Receptor</label>
-                                        <input
-                                            type="email"
-                                            value={recipientEmail}
-                                            onChange={(e) => setRecipientEmail(e.target.value)}
-                                            className="w-full bg-white border-2 border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 outline-none transition-all"
-                                            placeholder="receptor@empresa.com"
-                                        />
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        <div
-                            onClick={() => fileInputRef.current?.click()}
-                            className={cn(
-                                "flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed transition-all cursor-pointer shadow-sm group",
-                                file
-                                    ? "bg-emerald-50 border-emerald-200"
-                                    : "bg-white border-slate-100 hover:border-orange-300 hover:bg-orange-50"
-                            )}
-                        >
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                onChange={handleFileChange}
-                                className="hidden"
-                                accept=".pdf,.jpg,.jpeg,.png"
-                            />
-                            {file ? (
-                                <div className="flex flex-col items-center space-y-2 text-emerald-700">
-                                    <FileText size={24} />
-                                    <span className="text-[10px] font-bold truncate max-w-[120px]">{file.name}</span>
-                                    <X
-                                        size={14}
-                                        className="text-rose-500 hover:scale-125 transition-transform"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setFile(null);
+                    {exitType === 'sale' ? (
+                        <div className="space-y-6 animate-fade-in">
+                            <div className="space-y-1.5 font-['Outfit']">
+                                <label className="text-[13px] font-medium text-[#202124] ml-1">Seleccionar Orden de Venta</label>
+                                <div className="relative group">
+                                    <Tag className="absolute left-3 top-2.5 text-[#5f6368] group-focus-within:text-[#1a73e8]" size={18} />
+                                    <select
+                                        value={selectedSalesOrderId}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setSelectedSalesOrderId(val);
+                                            const order = salesOrders.find(o => o.id === val);
+                                            if (order) {
+                                                setQuantity(order.quantity);
+                                                setRecipientEmail(order.customer_email);
+                                                if (order.delivery_date) {
+                                                    setReturnDeadline(order.delivery_date.split('T')[0]);
+                                                }
+                                            }
                                         }}
+                                        className="google-input google-input-icon appearance-none"
+                                    >
+                                        <option value="">Buscar orden pendiente...</option>
+                                        {salesOrders.filter(o => o.product_id === product.id && o.status === 'PENDING').map(o => (
+                                            <option key={o.id} value={o.id}>OV-{o.id.substring(0, 8)} | {o.customer_name} ({o.quantity} uds)</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {selectedSalesOrderId && (
+                                <div className="bg-[#e8f0fe] rounded-xl p-5 border border-[#1a73e8]/20 space-y-4 animate-scale-in">
+                                    <div className="flex items-center justify-between border-b border-[#1a73e8]/10 pb-3">
+                                        <h4 className="text-sm font-bold text-[#1a73e8] uppercase tracking-wider">Detalles del Pedido</h4>
+                                        <span className="bg-[#1a73e8] text-white text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">Confirmado</span>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <p className="text-[10px] font-bold text-[#5f6368] uppercase">Cliente</p>
+                                            <p className="text-sm font-medium text-[#202124]">{salesOrders.find(o => o.id === selectedSalesOrderId)?.customer_name}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-bold text-[#5f6368] uppercase">Cantidad</p>
+                                            <p className="text-sm font-medium text-[#202124]">{quantity} unidades</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-bold text-[#5f6368] uppercase">Tipo de Entrega</p>
+                                            <p className="text-sm font-medium text-[#202124]">{salesOrders.find(o => o.id === selectedSalesOrderId)?.shipping_type === 'DELIVERY' ? 'A Domicilio' : 'Retiro en Local'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-bold text-[#5f6368] uppercase">Correo</p>
+                                            <p className="text-sm font-medium text-[#202124] truncate">{recipientEmail}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="pt-3 border-t border-[#1a73e8]/10">
+                                        <div className="flex items-center space-x-2">
+                                            <Calendar className="text-[#1a73e8]" size={16} />
+                                            <span className="text-[11px] font-bold text-[#5f6368] uppercase">Fecha de Entrega Estimada:</span>
+                                            <span className="text-sm font-medium text-[#202124]">{returnDeadline}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="space-y-6 animate-fade-in">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1.5 font-['Outfit']">
+                                    <label className="text-[13px] font-medium text-[#202124] ml-1">Cantidad</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max={product.stock}
+                                        value={quantity}
+                                        onChange={(e) => setQuantity(e.target.value)}
+                                        className="google-input"
                                     />
                                 </div>
-                            ) : (
-                                <div className="flex flex-col items-center space-y-2 text-slate-400 group-hover:text-orange-600 transition-colors">
-                                    <Upload size={24} />
-                                    <span className="text-xs font-black uppercase tracking-widest">Soporte</span>
+
+                                <div className="space-y-1.5 font-['Outfit']">
+                                    <label className="text-[13px] font-medium text-[#202124] ml-1">Referencia / Guía (Opcional)</label>
+                                    <input
+                                        type="text"
+                                        value={reference}
+                                        onChange={(e) => setReference(e.target.value)}
+                                        className="google-input"
+                                        placeholder="Ej: GR-2026-X"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-1.5 font-['Outfit']">
+                                    <label className="text-[13px] font-medium text-[#202124] ml-1">Solicitante</label>
+                                    <div className="relative group">
+                                        <User className="absolute left-3 top-2.5 text-[#5f6368] group-focus-within:text-[#1a73e8] transition-colors" size={18} />
+                                        <input
+                                            type="text"
+                                            value={applicant}
+                                            onChange={(e) => setApplicant(e.target.value)}
+                                            className="google-input google-input-icon"
+                                            placeholder="Nombre completo"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1.5 font-['Outfit']">
+                                    <label className="text-[13px] font-medium text-[#202124] ml-1">Área / Dept.</label>
+                                    <div className="relative group">
+                                        <Users className="absolute left-3 top-2.5 text-[#5f6368] group-focus-within:text-[#1a73e8] transition-colors" size={18} />
+                                        <input
+                                            type="text"
+                                            value={applicantArea}
+                                            onChange={(e) => setApplicantArea(e.target.value)}
+                                            className="google-input google-input-icon"
+                                            placeholder="Área de trabajo"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {exitType !== 'sale' && (
+                                <div className="space-y-5 pt-4 border-t border-[#dadce0]">
+                                    <div className="flex items-center justify-between p-4 bg-[#f8f9fa] rounded-xl border border-[#dadce0]">
+                                        <div className="flex items-center space-x-3">
+                                            <Clock size={20} className={isReturnable ? "text-[#d93025]" : "text-[#5f6368]"} />
+                                            <div>
+                                                <h4 className="text-sm font-medium text-[#202124]">¿Es un producto devolutivo?</h4>
+                                                <p className="text-[11px] text-[#5f6368]">Indica si el producto debe retornar al almacén</p>
+                                            </div>
+                                        </div>
+                                        <input
+                                            type="checkbox"
+                                            checked={isReturnable}
+                                            onChange={(e) => setIsReturnable(e.target.checked)}
+                                            className="w-5 h-5 accent-[#1a73e8] cursor-pointer"
+                                        />
+                                    </div>
+
+                                    {isReturnable && (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in">
+                                            <div className="space-y-1.5 font-['Outfit']">
+                                                <label className="text-[13px] font-medium text-[#202124] ml-1 text-[#d93025]">Fecha de retorno</label>
+                                                <input
+                                                    type="date"
+                                                    value={returnDeadline}
+                                                    onChange={(e) => setReturnDeadline(e.target.value)}
+                                                    className="w-full bg-white border border-[#dadce0] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#d93025] focus:ring-4 focus:ring-[#d93025]/10 transition-all font-['Outfit']"
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5 font-['Outfit']">
+                                                <label className="text-[13px] font-medium text-[#202124] ml-1 text-[#d93025]">Correo del receptor</label>
+                                                <input
+                                                    type="email"
+                                                    value={recipientEmail}
+                                                    onChange={(e) => setRecipientEmail(e.target.value)}
+                                                    className="w-full bg-white border border-[#dadce0] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#d93025] focus:ring-4 focus:ring-[#d93025]/10 transition-all font-['Outfit']"
+                                                    placeholder="email@ejemplo.com"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
+                    )}
+
+                    <div className="space-y-5 pt-4 border-t border-[#dadce0]">
+                        <div className="space-y-1.5 font-['Outfit']">
+                            <label className="text-[13px] font-medium text-[#202124] ml-1">Documento soporte (Opcional)</label>
+                            <div
+                                onClick={() => fileInputRef.current?.click()}
+                                className={cn(
+                                    "flex flex-col items-center justify-center p-6 rounded-xl border-2 border-dashed cursor-pointer transition-all",
+                                    file ? "bg-[#e5f4ea] border-[#1e8e3e]" : "bg-[#f8f9fa] border-[#dadce0] hover:border-[#1a73e8]"
+                                )}
+                            >
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleFileChange}
+                                    className="hidden"
+                                    accept=".pdf,.jpg,.jpeg,.png"
+                                />
+                                {file ? (
+                                    <div className="flex items-center space-x-2 text-[#1e8e3e]">
+                                        <FileText size={20} />
+                                        <span className="text-xs font-medium truncate max-w-[200px]">{file.name}</span>
+                                        <X size={14} className="hover:scale-125 transition-transform" onClick={(e) => { e.stopPropagation(); setFile(null); }} />
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center text-[#5f6368]">
+                                        <Upload size={24} />
+                                        <span className="text-[10px] font-bold uppercase tracking-widest mt-2">Adjuntar soporte</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
 
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className={cn(
-                            "w-full py-5 rounded-2xl font-black uppercase tracking-widest text-sm flex items-center justify-center space-x-3 shadow-lg transition-all active:scale-[0.98]",
-                            loading
-                                ? "bg-slate-200 text-slate-400 cursor-wait"
-                                : "bg-orange-600 hover:bg-orange-500 text-white"
-                        )}
-                    >
-                        {loading ? (
-                            <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/20 border-b-white"></div>
-                        ) : (
-                            <ShoppingCart size={20} />
-                        )}
-                        <span>Confirmar Salida</span>
-                    </button>
+                    <div className="flex items-center justify-end space-x-3 pt-6 border-t border-[#dadce0]">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="px-6 py-2 rounded-full text-sm font-medium text-[#5f6368] hover:bg-[#f1f3f4] transition-all"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="inline-flex items-center space-x-2 bg-[#1a73e8] text-white px-8 py-2 rounded-full font-medium text-sm hover:bg-[#1765cc] transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                        >
+                            {loading ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-b-white"></div>
+                            ) : (
+                                <ShoppingCart size={18} />
+                            )}
+                            <span>Confirmar Salida</span>
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>

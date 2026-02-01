@@ -1,118 +1,110 @@
 import React from 'react';
-import { Plus, Trash2, Edit, ShoppingCart, Box, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, Edit, ShoppingCart, Box, AlertTriangle, MoreVertical, Package } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
-export const ProductTable = ({ products, onReplenish, onEdit, onDelete, onSell, loading }) => {
-    const [quantities, setQuantities] = React.useState({});
-
-    const handleQuantityChange = (id, value) => {
-        setQuantities(prev => ({ ...prev, [id]: value }));
-    };
-
-    const getQuantity = (id) => {
-        return quantities[id] !== undefined ? quantities[id] : "1";
-    };
-
+export const ProductTable = ({ products, onReturn, onEdit, onDelete, onSell, loading }) => {
     if (loading) {
         return (
             <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#1a73e8] border-b-transparent"></div>
             </div>
         );
     }
 
     if (products.length === 0) {
         return (
-            <div className="text-center py-20 glass-panel rounded-2xl animate-fade-in">
-                <Box className="mx-auto h-16 w-16 text-slate-300 mb-4" />
-                <h3 className="text-xl font-bold text-slate-600">Inventario Vacío</h3>
-                <p className="text-slate-400 max-w-xs mx-auto">No hay productos registrados. Comienza añadiendo uno nuevo.</p>
+            <div className="text-center py-24 bg-white rounded-2xl border border-[#dadce0] animate-fade-in mx-4">
+                <Box className="mx-auto h-16 w-16 text-[#dadce0] mb-6" />
+                <h3 className="text-xl font-medium text-[#202124]">No hay productos registrados</h3>
+                <p className="text-[#5f6368] max-w-xs mx-auto mt-2">Agrega productos al catálogo para empezar a gestionar el inventario.</p>
             </div>
         );
     }
 
     return (
-        <div className="overflow-x-auto glass-panel rounded-3xl border border-slate-200 shadow-xl bg-white/50">
-            <table className="w-full text-left border-collapse">
+        <div className="overflow-x-auto bg-white">
+            <table className="google-table">
                 <thead>
-                    <tr className="border-b border-slate-100 bg-slate-50/50">
-                        <th className="px-8 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest">Información del Producto</th>
-                        <th className="px-8 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest">SKU</th>
-                        <th className="px-8 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest">Estado de Stock</th>
-                        <th className="px-8 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Gestión</th>
+                    <tr>
+                        <th>Producto / Descripción</th>
+                        <th>SKU</th>
+                        <th>Estado de Existencias</th>
+                        <th className="text-right">Acciones de Almacén</th>
                     </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody>
                     {products.map((product) => {
-                        const qty = getQuantity(product.id);
-                        const isLowStock = product.stock <= 5;
+                        const isLowStock = product.stock > 0 && product.stock <= 5;
+                        const isOutOfStock = product.stock === 0;
 
                         return (
-                            <tr key={product.id} className="group hover:bg-slate-50/80 transition-all duration-300">
-                                <td className="px-8 py-6">
+                            <tr key={product.id} className="hover:bg-[#f8f9fa] transition-colors">
+                                <td className="font-['Outfit']">
                                     <div className="flex items-center space-x-4">
-                                        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:text-primary-600 transition-colors border border-slate-200">
-                                            <Box size={20} />
+                                        <div className="w-10 h-10 rounded-lg bg-[#f1f3f4] flex items-center justify-center text-[#5f6368]">
+                                            <Package size={20} />
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="font-bold text-slate-900 group-hover:text-primary-700 transition-colors uppercase tracking-tight">{product.name}</span>
-                                            <span className="text-xs text-slate-500 font-medium line-clamp-1 max-w-xs">{product.description}</span>
+                                            <span className="font-medium text-[#202124] text-base capitalize">{product.name}</span>
+                                            <span className="text-xs text-[#5f6368] line-clamp-1">{product.description || 'Sin descripción'}</span>
                                         </div>
                                     </div>
                                 </td>
-                                <td className="px-8 py-6 text-sm text-slate-500 font-mono tracking-tighter uppercase">{product.sku}</td>
-                                <td className="px-8 py-6">
-                                    <div className="flex items-center space-x-3">
+                                <td>
+                                    <span className="font-mono text-[13px] bg-[#f1f3f4] px-2 py-1 rounded text-[#5f6368] uppercase">
+                                        {product.sku}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div className="flex items-center space-x-2">
                                         <span className={cn(
-                                            "inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold border",
-                                            isLowStock
-                                                ? "bg-red-50 text-red-600 border-red-100"
-                                                : "bg-emerald-50 text-emerald-600 border-emerald-100"
+                                            "inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border",
+                                            isOutOfStock
+                                                ? "bg-[#fce8e6] text-[#d93025] border-[#f5c2c7]"
+                                                : isLowStock
+                                                    ? "bg-[#fef7e0] text-[#b06000] border-[#feefc3]"
+                                                    : "bg-[#e6f4ea] text-[#1e8e3e] border-[#ceead6]"
                                         )}>
-                                            {product.stock} unidades
+                                            {product.stock} {product.unit || 'uds'}
                                         </span>
-                                        {isLowStock && <AlertTriangle size={14} className="text-amber-500 animate-pulse" />}
+                                        {isLowStock && <AlertTriangle size={14} className="text-[#f9ab00]" />}
                                     </div>
                                 </td>
-                                <td className="px-8 py-6 text-right">
+                                <td>
                                     <div className="flex items-center justify-end space-x-3">
-                                        <div className="flex items-center gap-2">
-                                            {/* Stock In Button */}
+                                        <div className="flex items-center bg-[#f1f3f4] rounded-full p-1 border border-[#dadce0]">
                                             <button
-                                                onClick={() => onReplenish(product)}
-                                                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-wider transition-all shadow-md active:scale-95"
-                                                title="Registrar Entrada"
+                                                onClick={() => onReturn(product)}
+                                                className="flex items-center space-x-1.5 px-4 py-1.5 rounded-full hover:bg-white hover:text-[#1a73e8] text-[#5f6368] text-[12px] font-medium transition-all"
+                                                title="Registrar Retorno de Producto (Devolución)"
                                             >
                                                 <Plus size={14} />
-                                                <span>Registro de Entradas</span>
+                                                <span>Retorno</span>
                                             </button>
-
-                                            {/* Stock Out Button */}
                                             <button
                                                 onClick={() => onSell(product)}
-                                                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-500 text-white text-[10px] font-black uppercase tracking-wider transition-all shadow-md active:scale-95"
-                                                title="Registrar Salida"
+                                                className="flex items-center space-x-1.5 px-4 py-1.5 rounded-full hover:bg-white hover:text-[#1a73e8] text-[#5f6368] text-[12px] font-medium transition-all"
+                                                title="Extraer Stock"
                                             >
                                                 <ShoppingCart size={14} />
-                                                <span>Registro de Salidas</span>
+                                                <span>Salida</span>
                                             </button>
                                         </div>
 
-                                        {/* Utility: Edit/Delete */}
-                                        <div className="flex items-center space-x-1 border-l border-slate-200 pl-3">
+                                        <div className="flex items-center space-x-1">
                                             <button
                                                 onClick={() => onEdit(product)}
-                                                className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
+                                                className="p-2 text-[#5f6368] hover:bg-[#f1f3f4] hover:text-[#1a73e8] rounded-full transition-all"
                                                 title="Editar"
                                             >
-                                                <Edit size={16} />
+                                                <Edit size={18} />
                                             </button>
                                             <button
                                                 onClick={() => onDelete(product.id)}
-                                                className="p-2 rounded-lg bg-rose-100 hover:bg-rose-600 text-rose-600 hover:text-white transition-all shadow-sm active:scale-95"
+                                                className="p-2 text-[#5f6368] hover:bg-[#fce8e6] hover:text-[#d93025] rounded-full transition-all"
                                                 title="Eliminar"
                                             >
-                                                <Trash2 size={16} />
+                                                <Trash2 size={18} />
                                             </button>
                                         </div>
                                     </div>

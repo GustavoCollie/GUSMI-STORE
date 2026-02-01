@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Package, PackagePlus, AlertCircle, Edit, DollarSign, Box, Tag, AlignLeft, Hash, FileText, Upload, Plus } from 'lucide-react';
+import { X, Package, AlertCircle, FileText, Upload, Plus } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
 export const ProductForm = ({ onSubmit, onClose, initialData }) => {
@@ -7,14 +7,16 @@ export const ProductForm = ({ onSubmit, onClose, initialData }) => {
     const [formData, setFormData] = useState({
         name: initialData?.name || '',
         description: initialData?.description || '',
-        stock: initialData?.stock || '0',
-        sku: initialData?.sku || '',
-        initial_reference: initialData?.initial_reference || ''
+        sku: initialData?.sku || ''
     });
-    const [file, setFile] = useState(null);
+    const [imageFile, setImageFile] = useState(null);
+    const [techSheetFile, setTechSheetFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
-    const fileInputRef = useRef(null);
+
+    const imageInputRef = useRef(null);
+    const techSheetInputRef = useRef(null);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -23,13 +25,11 @@ export const ProductForm = ({ onSubmit, onClose, initialData }) => {
 
         try {
             const data = {
-                ...formData,
-                stock: parseInt(formData.stock)
+                ...formData
             };
 
-            if (file) {
-                data.file = file;
-            }
+            if (imageFile) data.image_file = imageFile;
+            if (techSheetFile) data.tech_sheet_file = techSheetFile;
 
             await onSubmit(data);
             onClose();
@@ -40,178 +40,184 @@ export const ProductForm = ({ onSubmit, onClose, initialData }) => {
         }
     };
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    };
-
-    const handleFileChange = (e) => {
-        const selectedFile = e.target.files[0];
-        if (selectedFile) {
-            setFile(selectedFile);
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setImageFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => setImagePreview(reader.result);
+            reader.readAsDataURL(file);
         }
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in/20">
-            <div className="w-full max-w-lg bg-white border border-slate-200 rounded-3xl shadow-2xl overflow-hidden animate-scale-in">
-                {/* Header Section */}
-                <div className="relative p-6 bg-emerald-50 border-b border-emerald-100">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                            <div className="p-3 bg-emerald-600 rounded-2xl shadow-lg">
-                                <Package className="text-white" size={24} />
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-black text-slate-900 tracking-tight leading-none">
-                                    {isEdit ? 'Editar Producto' : 'Nuevo Producto'}
-                                </h3>
-                                <p className="text-xs text-emerald-600 font-black uppercase tracking-widest mt-1">
-                                    {isEdit ? 'Modificar ficha técnica' : 'Registro de inventario'}
-                                </p>
-                            </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#202124]/40 backdrop-blur-[2px] animate-fade-in">
+            <div className="w-full max-w-[560px] bg-white rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
+                {/* Header */}
+                <div className="px-8 py-6 flex items-center justify-between border-b border-[#dadce0]">
+                    <div className="flex items-center space-x-3">
+                        <div className="p-2.5 bg-[#e8f0fe] text-[#1a73e8] rounded-lg">
+                            <Package size={24} />
                         </div>
-                        <button
-                            onClick={onClose}
-                            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-full transition-all"
-                        >
-                            <X size={24} />
-                        </button>
+                        <div>
+                            <h3 className="text-xl font-medium text-[#202124]">
+                                {isEdit ? 'Editar Producto' : 'Registrar Nuevo Producto'}
+                            </h3>
+                            <p className="text-xs text-[#5f6368] mt-0.5 font-['Outfit']">
+                                {isEdit ? 'Actualiza los detalles técnicos' : 'El stock inicial será 0 por defecto'}
+                            </p>
+                        </div>
                     </div>
+                    <button
+                        onClick={onClose}
+                        className="p-2 text-[#5f6368] hover:bg-[#f1f3f4] rounded-full transition-all"
+                    >
+                        <X size={20} />
+                    </button>
                 </div>
 
-                {/* Form Section */}
+                {/* Form Body */}
                 <form onSubmit={handleSubmit} className="p-8 space-y-6 overflow-y-auto max-h-[80vh]">
                     {error && (
-                        <div className="bg-rose-50 border-2 border-rose-100 text-rose-600 p-4 rounded-2xl text-sm flex items-center space-x-3 animate-shake font-bold">
+                        <div className="bg-[#fce8e6] border border-[#f5c2c7] text-[#d93025] p-4 rounded-xl text-sm flex items-center space-x-3 animate-shake">
                             <AlertCircle size={20} className="flex-shrink-0" />
-                            <span>{error}</span>
+                            <span className="font-medium">{error}</span>
                         </div>
                     )}
 
-                    <div className="grid grid-cols-1 gap-6">
-                        <div className="space-y-2">
-                            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Nombre del Producto</label>
-                            <input
-                                type="text"
-                                value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                className="w-full bg-white border-2 border-slate-100 rounded-xl px-4 py-3.5 text-slate-900 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-400 shadow-sm"
-                                placeholder="Ej: Monitor Pro 27\"
-                                required
-                            />
+                    <div className="space-y-5">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                            {/* Left: General Info */}
+                            <div className="space-y-5">
+                                <div className="space-y-1.5 font-['Outfit']">
+                                    <label className="text-[13px] font-medium text-[#202124] ml-1">Nombre</label>
+                                    <input
+                                        type="text"
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        className="google-input"
+                                        placeholder="Ej: Monitor LED 24\"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="space-y-1.5 font-['Outfit']">
+                                    <label className="text-[13px] font-medium text-[#202124] ml-1">SKU / Código</label>
+                                    <input
+                                        type="text"
+                                        value={formData.sku}
+                                        onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                                        className="google-input uppercase font-mono"
+                                        placeholder="SKU-001"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Right: Product Photo */}
+                            <div className="space-y-1.5 font-['Outfit']">
+                                <label className="text-[13px] font-medium text-[#202124] ml-1">Foto del Producto</label>
+                                <div
+                                    onClick={() => imageInputRef.current?.click()}
+                                    className={cn(
+                                        "aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden bg-[#f8f9fa]",
+                                        imagePreview ? "border-solid border-[#1a73e8]" : "border-[#dadce0] hover:border-[#1a73e8] hover:bg-[#e8f0fe]/50"
+                                    )}
+                                >
+                                    <input
+                                        type="file"
+                                        ref={imageInputRef}
+                                        className="hidden"
+                                        accept="image/*"
+                                        onChange={handleImageChange}
+                                    />
+                                    {imagePreview ? (
+                                        <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="flex flex-col items-center text-[#5f6368]">
+                                            <Upload size={24} />
+                                            <span className="text-[10px] font-bold uppercase tracking-wider mt-2">Subir Foto</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Descripción</label>
+                        <div className="space-y-1.5 font-['Outfit']">
+                            <label className="text-[13px] font-medium text-[#202124] ml-1">Descripción</label>
                             <textarea
                                 value={formData.description}
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                className="w-full bg-white border-2 border-slate-100 rounded-xl px-4 py-3 text-slate-900 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-400 shadow-sm resize-none"
-                                placeholder="Detalles técnicos o notas..."
+                                className="google-input resize-none"
+                                placeholder="Especificaciones técnicas, marca, modelo..."
                                 rows="3"
                                 required
                             />
                         </div>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Stock Inicial</label>
-                            <input
-                                type="number"
-                                value={formData.stock}
-                                onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) })}
-                                className="w-full bg-white border-2 border-slate-100 rounded-xl px-4 py-3.5 text-slate-900 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-400 shadow-sm"
-                                disabled={isEdit}
-                                required
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">SKU / Código</label>
-                            <input
-                                type="text"
-                                value={formData.sku}
-                                onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                                className="w-full bg-white border-2 border-slate-100 rounded-xl px-4 py-3.5 text-slate-900 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-400 shadow-sm"
-                                placeholder="PROD-001"
-                                required
-                            />
-                        </div>
-                    </div>
-
-                    {/* Traceability Fields (Reference and File) */}
-                    <div className="grid grid-cols-1 gap-6 pt-4 border-t border-slate-100">
-                        <div className="space-y-2">
-                            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Referencia Inicial / Guía</label>
-                            <input
-                                type="text"
-                                value={formData.initial_reference}
-                                onChange={(e) => setFormData({ ...formData, initial_reference: e.target.value })}
-                                className="w-full bg-white border-2 border-slate-100 rounded-xl px-4 py-3.5 text-slate-900 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-400 shadow-sm"
-                                placeholder="GR-2026-001"
-                                required
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Documento Soporte</label>
+                        {/* Tech Sheet Upload */}
+                        <div className="space-y-1.5 font-['Outfit'] pt-2">
+                            <label className="text-[13px] font-medium text-[#202124] ml-1">Ficha Técnica (.pdf, .doc)</label>
                             <div
-                                onClick={() => fileInputRef.current?.click()}
+                                onClick={() => techSheetInputRef.current?.click()}
                                 className={cn(
-                                    "flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed transition-all cursor-pointer shadow-sm group",
-                                    file
-                                        ? "bg-emerald-50 border-emerald-200"
-                                        : "bg-white border-slate-100 hover:border-emerald-300 hover:bg-emerald-50"
+                                    "flex items-center space-x-3 p-4 rounded-xl border-2 border-dashed transition-all cursor-pointer bg-[#f8f9fa]",
+                                    techSheetFile ? "bg-[#e8f0fe] border-[#1a73e8]" : "border-[#dadce0] hover:border-[#1a73e8]"
                                 )}
                             >
                                 <input
                                     type="file"
-                                    ref={fileInputRef}
-                                    onChange={handleFileChange}
+                                    ref={techSheetInputRef}
                                     className="hidden"
-                                    accept=".pdf,.jpg,.jpeg,.png"
+                                    accept=".pdf,.doc,.docx"
+                                    onChange={(e) => setTechSheetFile(e.target.files[0])}
                                 />
-                                {file ? (
-                                    <div className="flex flex-col items-center space-y-2 text-emerald-700">
-                                        <FileText size={24} />
-                                        <span className="text-xs font-bold truncate max-w-[200px]">{file.name}</span>
-                                        <X
-                                            size={16}
-                                            className="text-rose-500 hover:scale-125 transition-transform"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setFile(null);
-                                            }}
-                                        />
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col items-center space-y-2 text-slate-400 group-hover:text-emerald-600 transition-colors">
-                                        <Upload size={24} />
-                                        <span className="text-xs font-black uppercase tracking-widest">Subir Comprobante</span>
-                                    </div>
+                                <div className={cn(
+                                    "p-2 rounded-lg",
+                                    techSheetFile ? "bg-[#1a73e8] text-white" : "bg-[#dadce0] text-[#5f6368]"
+                                )}>
+                                    <FileText size={20} />
+                                </div>
+                                <div className="flex-1 overflow-hidden">
+                                    <p className="text-xs font-medium text-[#202124] truncate px-1">
+                                        {techSheetFile ? techSheetFile.name : 'Seleccionar Ficha Técnica'}
+                                    </p>
+                                    {!techSheetFile && <p className="text-[10px] text-[#5f6368] px-1 uppercase tracking-tight">Opcional</p>}
+                                </div>
+                                {techSheetFile && (
+                                    <button
+                                        type="button"
+                                        className="text-[#5f6368] hover:text-[#d93025]"
+                                        onClick={(e) => { e.stopPropagation(); setTechSheetFile(null); }}
+                                    >
+                                        <X size={16} />
+                                    </button>
                                 )}
                             </div>
                         </div>
                     </div>
 
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className={cn(
-                            "w-full py-5 rounded-2xl text-white font-black uppercase tracking-widest shadow-lg transition-all active:scale-[0.98] flex items-center justify-center space-x-3",
-                            isEdit
-                                ? 'bg-indigo-600 hover:bg-indigo-500'
-                                : 'bg-emerald-600 hover:bg-emerald-500'
-                        )}
-                    >
-                        {loading ? (
-                            <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/20 border-b-white"></div>
-                        ) : (
-                            <Plus size={22} />
-                        )}
-                        <span>{isEdit ? 'Guardar Cambios' : 'Crear Producto'}</span>
-                    </button>
+                    <div className="flex items-center justify-end space-x-3 pt-6 border-t border-[#dadce0]">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="px-6 py-2 rounded-full text-sm font-medium text-[#5f6368] hover:bg-[#f1f3f4] transition-all font-['Outfit']"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="inline-flex items-center space-x-2 bg-[#1a73e8] text-white px-8 py-2 rounded-full font-medium text-sm hover:bg-[#1765cc] transition-all shadow-md active:scale-95 disabled:opacity-50 font-['Outfit']"
+                        >
+                            {loading ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-b-white"></div>
+                            ) : (
+                                <Plus size={18} />
+                            )}
+                            <span>{isEdit ? 'Guardar Cambios' : 'Crear Producto'}</span>
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>

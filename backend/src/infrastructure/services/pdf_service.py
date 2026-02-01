@@ -40,14 +40,13 @@ class PDFService:
         p.setFont("Helvetica", 10)
         
         details = [
-            ("Tipo de Movimiento:", "SALIDA (DESPACHO)" if movement_data.get("type") == "EXIT" else "ENTRADA"),
+            ("Tipo de Movimiento:", "VENTA (SALIDA)" if movement_data.get("is_sale") else ("SALIDA (DEVOLUTIVO)" if movement_data.get("is_returnable") else "SALIDA")),
             ("Referencia / Guía:", movement_data.get("reference", "N/A")),
+            ("Producto:", movement_data.get("product_name", "N/A")),
             ("Cantidad:", f"{movement_data.get('quantity', 0)} unidades"),
-            ("Solicitante:", movement_data.get("applicant", "N/A")),
-            ("Área:", movement_data.get("applicant_area", "N/A")),
-            ("Devolutivo:", "SÍ" if movement_data.get("is_returnable") else "NO"),
-            ("Fecha Retorno:", movement_data.get("return_deadline", "N/A")),
-            ("Email Receptor:", movement_data.get("recipient_email", "N/A"))
+            ("Cliente / Receptor:", movement_data.get("applicant", "N/A")),
+            ("Fecha Entrega/Retorno:", movement_data.get("return_deadline", "N/A")),
+            ("Email Cliente:", movement_data.get("recipient_email", "N/A"))
         ]
 
         for i, (label, value) in enumerate(details):

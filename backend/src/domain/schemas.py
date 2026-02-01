@@ -10,8 +10,9 @@ class ProductCreateRequest(BaseModel):
     
     name: str = Field(..., min_length=1, max_length=200, description="Product name")
     description: str = Field(..., min_length=1, max_length=1000, description="Product description")
-    stock: int = Field(..., ge=0, description="Initial stock (cannot be negative)")
     sku: str = Field(..., min_length=1, max_length=50, description="Unique product SKU")
+    image_path: Optional[str] = None
+    tech_sheet_path: Optional[str] = None
     
     model_config = ConfigDict(
         json_schema_extra={
@@ -33,6 +34,8 @@ class ProductResponse(BaseModel):
     description: str
     stock: int
     sku: str
+    image_path: Optional[str] = None
+    tech_sheet_path: Optional[str] = None
     updated_at: datetime
     
     model_config = ConfigDict(from_attributes=True)
@@ -48,6 +51,7 @@ class StockOperationRequest(BaseModel):
     is_returnable: bool = False
     return_deadline: Optional[datetime] = None
     recipient_email: Optional[EmailStr] = None
+    sales_order_id: Optional[UUID] = None
     
     model_config = ConfigDict(
         json_schema_extra={
@@ -72,6 +76,9 @@ class MovementResponse(BaseModel):
     is_returnable: bool = False
     return_deadline: Optional[datetime] = None
     recipient_email: Optional[str] = None
+    parent_id: Optional[UUID] = None
+    product_name: Optional[str] = None
+    sales_order_id: Optional[UUID] = None
     date: datetime
     
     model_config = ConfigDict(from_attributes=True)
@@ -83,6 +90,25 @@ class ProductUpdateRequest(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=200)
     description: Optional[str] = Field(None, min_length=1, max_length=1000)
     sku: Optional[str] = Field(None, min_length=1, max_length=50)
+    # Trazabilidad inicial
+    initial_reference: Optional[str] = None
+    initial_document_path: Optional[str] = None
+
+class PendingReturnResponse(BaseModel):
+    """Schema for a pending return."""
+    movement_id: UUID
+    product_id: UUID
+    product_name: str
+    quantity: int
+    pending_quantity: int
+    applicant: str
+    applicant_area: str
+    reference: str
+    recipient_email: Optional[str] = None
+    date: datetime
+    return_deadline: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ErrorResponse(BaseModel):

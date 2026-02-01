@@ -1,42 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @layer base {
   :root {
-    --color-primary-50: #f0f9ff;
-    --color-primary-100: #e0f2fe;
-    --color-primary-200: #bae6fd;
-    --color-primary-300: #7dd3fc;
-    --color-primary-400: #38bdf8;
-    --color-primary-500: #0ea5e9;
-    --color-primary-600: #0284c7;
-    --color-primary-700: #0369a1;
-    --color-primary-800: #075985;
-    --color-primary-900: #0c4a6e;
-    --color-primary-950: #082f49;
+    --google-blue: #1a73e8;
+    --google-blue-hover: #1765cc;
+    --google-gray-50: #f8f9fa;
+    --google-gray-100: #f1f3f4;
+    --google-gray-200: #e8eaed;
+    --google-gray-300: #dee1e5;
+    --google-gray-600: #5f6368;
+    --google-gray-700: #3c4043;
+    --google-gray-800: #202124;
+
+    --google-green: #1e8e3e;
+    --google-red: #d93025;
+    --google-yellow: #f9ab00;
   }
 }
 
 :root {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Inter', 'Outfit', system-ui, -apple-system, sans-serif;
   line-height: 1.5;
   font-weight: 400;
   color-scheme: light;
-  color: #1e293b;
+  color: var(--google-gray-800);
   background-color: #ffffff;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  background: #ffffff;
+  background-color: #ffffff;
   overflow-x: hidden;
 }
 
-/* Animations - Keeping them as they are subtle and functional */
+/* Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(10px);
   }
 
   to {
@@ -45,74 +48,141 @@ body {
   }
 }
 
-@keyframes slideIn {
+@keyframes slideUp {
   from {
-    transform: translateX(-16px);
     opacity: 0;
+    transform: translateY(20px);
   }
 
   to {
-    transform: translateX(0);
     opacity: 1;
+    transform: translateY(0);
   }
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.3s ease-out forwards;
+  animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
-.animate-slide-in {
-  animation: slideIn 0.3s ease-out forwards;
+.animate-slide-up {
+  animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
-/* Flat UI Components */
-.glass-panel {
+/* Material Design 3 Components */
+.google-card {
   background: #ffffff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  border-radius: 24px;
+  border: 1px solid var(--google-gray-200);
+  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, .3), 0 1px 3px 1px rgba(60, 64, 67, .15);
+  transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
 }
 
-.glass-card {
-  background: #f8fafc;
-  border: 1px solid #f1f5f9;
-  transition: all 0.2s ease;
+.google-card:hover {
+  box-shadow: 0 1px 3px 0 rgba(60, 64, 67, .3), 0 4px 8px 3px rgba(60, 64, 67, .15);
 }
 
-.glass-card:hover {
+.google-input {
   background: #ffffff;
-  border-color: #e2e8f0;
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--google-gray-300);
+  border-radius: 8px;
+  padding-top: 10px;
+  padding-right: 16px;
+  padding-bottom: 10px;
+  padding-left: 16px;
+  font-size: 14px;
+  color: var(--google-gray-800);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
 }
 
-.input-glass {
-  background: #ffffff;
-  border: 2px solid #e2e8f0;
-  transition: all 0.2s ease;
-  color: #1e293b;
+.google-input-icon {
+  padding-left: 42px !important;
 }
 
-.input-glass:focus {
-  border-color: #10b981;
-  /* Default success green focal point */
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+.google-input:focus {
+  border-color: var(--google-blue);
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
   outline: none;
 }
 
-/* Scrollbar Customization */
+.google-button-primary {
+  background-color: var(--google-blue);
+  color: white;
+  border-radius: 24px;
+  padding: 10px 24px;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.25px;
+  transition: background-color 0.2s, box-shadow 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.google-button-primary:hover {
+  background-color: var(--google-blue-hover);
+  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, .3), 0 1px 3px 1px rgba(60, 64, 67, .15);
+}
+
+.google-button-outline {
+  background-color: transparent;
+  color: var(--google-blue);
+  border: 1px solid var(--google-gray-300);
+  border-radius: 24px;
+  padding: 10px 24px;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.25px;
+  transition: background-color 0.2s, border-color 0.2s;
+  cursor: pointer;
+}
+
+.google-button-outline:hover {
+  background-color: rgba(26, 115, 232, 0.04);
+  border-color: var(--google-blue);
+}
+
+.google-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.google-table th {
+  background-color: var(--google-gray-50);
+  color: var(--google-gray-600);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--google-gray-200);
+}
+
+.google-table td {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--google-gray-100);
+  color: var(--google-gray-700);
+  font-size: 14px;
+}
+
+.google-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: var(--google-gray-50);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--google-gray-300);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--google-gray-600);
 }

@@ -9,8 +9,14 @@ import {
     CheckCircle,
     XCircle,
     Truck,
-    DollarSign
+    DollarSign,
+    FileText,
+    TrendingUp,
+    Package,
+    FileSpreadsheet
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
+import { ReceiveOrderModal } from './ReceiveOrderModal';
 
 export const PurchasingDashboard = ({
     suppliers,
@@ -19,203 +25,330 @@ export const PurchasingDashboard = ({
     loading,
     onAddOrder,
     onAddSupplier,
-    onUpdateOrderStatus
+    onAddProduct,
+    onUpdateOrderStatus,
+    error
 }) => {
-    if (loading && !kpis) {
-        return <div className="animate-pulse space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-slate-100 rounded-3xl"></div>)}
+    const [selectedOrder, setSelectedOrder] = useState(null);
+    const [showReceiveModal, setShowReceiveModal] = useState(false);
+
+    if (loading && !kpis && !error) {
+        return (
+            <div className="flex flex-col justify-center items-center h-96 space-y-4">
+                <div className="animate-spin rounded-full h-10 w-10 border-2 border-[#1a73e8] border-b-transparent"></div>
+                <p className="text-sm text-[#5f6368] animate-pulse">Cargando panel de compras...</p>
             </div>
-        </div>;
+        );
     }
+
+    if (error) {
+        return (
+            <div className="bg-[#fce8e6] border border-[#f5c2c7] text-[#d93025] p-8 rounded-2xl flex flex-col items-center justify-center space-y-4 text-center">
+                <AlertTriangle size={48} className="text-[#d93025]" />
+                <div>
+                    <h2 className="text-lg font-bold">Error en el Módulo de Compras</h2>
+                    <p className="text-sm opacity-90">{error}</p>
+                </div>
+                <button
+                    onClick={() => window.location.reload()}
+                    className="bg-[#d93025] text-white px-6 py-2 rounded-full font-medium text-sm hover:bg-[#b9281e] transition-all"
+                >
+                    Reintentar Conexión
+                </button>
+            </div>
+        );
+    }
+
+    const handleExportExcel = () => {
+        const title = "Reporte de Compras";
+        const description = "Historial completo y seguimiento de suministros";
+
+        const headers = [
+            'Referencia',
+            'Fecha',
+            'Proveedor',
+            'Producto',
+            'Cantidad',
+            'Precio Unitario',
+            'Subtotal',
+            'Flete',
+            'Otros Gastos',
+            'IGV',
+            'Total Inversión',
+            'Ahorro Negociado',
+            'Estado'
+        ];
+
+        const dataRows = orders.map(order => [
+            `OC-${order.id.substring(0, 6)}`,
+            new Date(order.created_at).toLocaleDateString('es-CL'),
+            order.supplier_name || 'Proveedor',
+            order.product_name || 'Producto',
+            order.quantity,
+            parseFloat(order.unit_price || 0),
+            (parseFloat(order.unit_price || 0) * order.quantity),
+            parseFloat(order.freight_amount || 0),
+            parseFloat(order.other_expenses_amount || 0),
+            parseFloat(order.tax_amount || 0),
+            parseFloat(order.total_amount),
+            parseFloat(order.savings_amount || 0),
+            order.status
+        ]);
+
+        const wsData = [
+            [title],
+            [description],
+            [],
+            headers,
+            ...dataRows
+        ];
+
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+        // Merge cells
+        if (!ws['!merges']) ws['!merges'] = [];
+        ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } });
+        ws['!merges'].push({ s: { r: 1, c: 0 }, e: { r: 1, c: headers.length - 1 } });
+
+        // Column widths
+        const wscols = headers.map(() => ({ wch: 20 }));
+        ws['!cols'] = wscols;
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Compras");
+
+        const filename = `Reporte_Compras_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        XLSX.writeFile(wb, filename);
+    };
 
     const kpiCards = [
         {
-            title: "Calidad (Tasa de Rechazo)",
-            value: `${kpis?.quality_rate.toFixed(1)}%`,
-            icon: AlertTriangle,
-            color: kpis?.quality_rate > 10 ? "text-rose-600" : "text-emerald-600",
-            bg: kpis?.quality_rate > 10 ? "bg-rose-50" : "bg-emerald-50",
-            description: "Porcentaje de pedidos con defectos"
+            title: "Calidad de Entregas",
+            value: `${(100 - (kpis?.quality_rate || 0)).toFixed(1)}%`,
+            icon: CheckCircle,
+            color: (kpis?.quality_rate || 0) > 10 ? "text-[#d93025]" : "text-[#1e8e3e]",
+            bg: (kpis?.quality_rate || 0) > 10 ? "bg-[#fce8e6]" : "bg-[#e6f4ea]",
+            description: "Productos aceptados sin defectos"
         },
         {
-            title: "Coste Adquisición (CTA)",
+            title: "Valor Adquirido",
             value: `$${parseFloat(kpis?.total_cta || 0).toLocaleString()}`,
             icon: DollarSign,
-            color: "text-blue-600",
-            bg: "bg-blue-50",
-            description: "Valor total de compras realizadas"
+            color: "text-[#1a73e8]",
+            bg: "bg-[#e8f0fe]",
+            description: "Inversión total en compras"
         },
         {
-            title: "Ahorro Total",
+            title: "Ahorro Negociado",
             value: `$${parseFloat(kpis?.total_savings || 0).toLocaleString()}`,
-            icon: TrendingDown,
-            color: "text-amber-600",
-            bg: "bg-amber-50",
-            description: "Ahorro por negociaciones/descuentos"
+            icon: TrendingUp,
+            color: "text-[#b06000]",
+            bg: "bg-[#fef7e0]",
+            description: "Diferencia vs precios base"
         },
         {
-            title: "Cumplimiento de Plazos",
-            value: `${kpis?.on_time_delivery_rate.toFixed(1)}%`,
+            title: "Eficiencia Logística",
+            value: `${(kpis?.on_time_delivery_rate || 0).toFixed(1)}%`,
             icon: Clock,
-            color: kpis?.on_time_delivery_rate < 90 ? "text-orange-600" : "text-emerald-600",
-            bg: kpis?.on_time_delivery_rate < 90 ? "bg-orange-50" : "bg-emerald-50",
-            description: "Pedidos entregados a tiempo"
+            color: (kpis?.on_time_delivery_rate || 0) < 90 ? "text-[#e37400]" : "text-[#1e8e3e]",
+            bg: (kpis?.on_time_delivery_rate || 0) < 90 ? "bg-[#fff4e5]" : "bg-[#e6f4ea]",
+            description: "Órdenes entregadas a tiempo"
         }
     ];
 
     return (
-        <div className="space-y-10 animate-fade-in">
+        <div className="space-y-8 animate-fade-in">
             {/* KPI Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {kpiCards.map((card, idx) => (
-                    <div key={idx} className={`${card.bg} p-8 rounded-[2.5rem] border border-white shadow-sm transition-all hover:shadow-md group`}>
-                        <div className="flex items-center justify-between mb-6">
-                            <div className={`${card.color} p-3 rounded-2xl bg-white shadow-sm group-hover:scale-110 transition-transform`}>
-                                <card.icon size={24} />
+                    <div key={idx} className="google-card p-6 !rounded-2xl border-[#e8eaed]">
+                        <div className="flex items-center space-x-4 mb-4">
+                            <div className={`${card.bg} ${card.color} p-2.5 rounded-full`}>
+                                <card.icon size={20} />
                             </div>
-                            <span className="text-xs font-black text-slate-400 uppercase tracking-widest">KPI</span>
+                            <h3 className="text-[11px] font-bold text-[#5f6368] uppercase tracking-wider">{card.title}</h3>
                         </div>
-                        <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">{card.title}</h3>
-                        <p className={`text-3xl font-black ${card.color} tracking-tight`}>{card.value}</p>
-                        <p className="text-xs text-slate-400 font-medium mt-4">{card.description}</p>
+                        <p className={`text-3xl font-medium text-[#202124] tracking-tight`}>{card.value}</p>
+                        <p className="text-[11px] text-[#5f6368] mt-2 font-medium">{card.description}</p>
                     </div>
                 ))}
             </div>
 
             {/* Actions Section */}
-            <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex items-center space-x-4">
                 <button
                     onClick={onAddOrder}
-                    className="flex-1 flex items-center justify-center space-x-3 bg-slate-900 hover:bg-slate-800 text-white px-8 py-5 rounded-3xl font-black shadow-xl transition-all active:scale-95"
+                    className="flex items-center space-x-2 bg-[#1a73e8] text-white px-6 py-3 rounded-full font-medium text-sm hover:bg-[#1765cc] transition-all shadow-sm"
                 >
-                    <ShoppingCart size={22} />
-                    <span className="tracking-widest uppercase">Registrar Orden de Compra</span>
+                    <Plus size={18} />
+                    <span>Nueva Orden de Compra</span>
+                </button>
+                <button
+                    onClick={onAddProduct}
+                    className="flex items-center space-x-2 bg-white text-[#1a73e8] border border-[#1a73e8] px-6 py-3 rounded-full font-medium text-sm hover:bg-[#e8f0fe] transition-all shadow-sm"
+                >
+                    <Package size={18} />
+                    <span>Registrar Nuevo Artículo</span>
                 </button>
                 <button
                     onClick={onAddSupplier}
-                    className="flex-1 flex items-center justify-center space-x-3 bg-white border-2 border-slate-200 hover:border-slate-900 text-slate-900 px-8 py-5 rounded-3xl font-black transition-all active:scale-95"
+                    className="flex items-center space-x-2 bg-white text-[#5f6368] border border-[#dadce0] px-6 py-3 rounded-full font-medium text-sm hover:bg-[#f8f9fa] transition-all"
                 >
-                    <Users size={22} />
-                    <span className="tracking-widest uppercase">Gestionar Proveedores</span>
+                    <Users size={18} />
+                    <span>Gestionar Proveedores</span>
                 </button>
             </div>
 
             {/* Orders Table */}
-            <div className="bg-white rounded-[3rem] border-2 border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
-                <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+            <div className="bg-white border border-[#dadce0] rounded-2xl overflow-hidden shadow-sm">
+                <div className="px-6 py-5 border-b border-[#dadce0] bg-[#f8f9fa] flex items-center justify-between">
                     <div>
-                        <h2 className="text-xl font-black text-slate-900 tracking-tight">Órdenes de Compra Recientes</h2>
-                        <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Historial y seguimiento de pedidos</p>
+                        <h2 className="text-base font-medium text-[#202124]">Órdenes de Compra</h2>
+                        <p className="text-xs text-[#5f6368] mt-0.5">Historial completo y seguimiento de suministros</p>
                     </div>
-                    <div className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-black uppercase tracking-widest">
-                        {orders.length} TOTAL
+                    <div className="flex items-center space-x-3">
+                        <button
+                            onClick={handleExportExcel}
+                            className="flex items-center space-x-2 px-3 py-1.5 bg-[#e6f4ea] text-[#1e8e3e] rounded-lg hover:bg-[#ceead6] transition-colors text-xs font-medium border border-[#1e8e3e]/20"
+                        >
+                            <FileSpreadsheet size={16} />
+                            <span>Exportar Excel</span>
+                        </button>
+                        <span className="bg-[#e8f0fe] text-[#1a73e8] px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                            {orders.length} TOTAL
+                        </span>
                     </div>
                 </div>
 
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+                    <table className="google-table">
                         <thead>
-                            <tr className="bg-slate-50/50">
-                                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">ID/Fecha</th>
-                                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Proveedor</th>
-                                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Producto</th>
-                                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Monto</th>
-                                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Estado</th>
-                                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Acciones</th>
+                            <tr>
+                                <th>Referencia</th>
+                                <th>Proveedor</th>
+                                <th>Detalle</th>
+                                <th>Inversión</th>
+                                <th>Estado</th>
+                                <th className="text-right">Gestión</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody>
                             {orders.map((order) => (
-                                <tr key={order.id} className="hover:bg-slate-50/50 transition-colors group">
-                                    <td className="px-8 py-6">
-                                        <span className="block text-sm font-black text-slate-900">OC-{order.id.substring(0, 6)}</span>
-                                        <span className="block text-[10px] text-slate-400 font-bold mt-1 tracking-wider uppercase">
-                                            {new Date(order.created_at).toLocaleDateString()}
-                                        </span>
-                                    </td>
-                                    <td className="px-8 py-6">
-                                        <div className="flex items-center space-x-3">
-                                            <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500">
-                                                <Users size={14} />
-                                            </div>
-                                            <span className="text-sm font-bold text-slate-700">{order.supplier_id.substring(0, 8)}...</span>
+                                <tr key={order.id} className="hover:bg-[#f8f9fa] transition-colors">
+                                    <td>
+                                        <div className="flex flex-col">
+                                            <span className="font-medium text-[#202124]">OC-{order.id.substring(0, 6)}</span>
+                                            <span className="text-[11px] text-[#5f6368]">
+                                                {new Date(order.created_at).toLocaleDateString('es-CL')}
+                                            </span>
                                         </div>
                                     </td>
-                                    <td className="px-8 py-6">
-                                        <span className="text-sm font-bold text-slate-700">{order.product_id.substring(0, 8)}...</span>
-                                        <span className="block text-[10px] text-slate-400 font-bold mt-1">CANT: {order.quantity}</span>
+                                    <td>
+                                        <div className="flex items-center space-x-2">
+                                            <div className="w-8 h-8 rounded-full bg-[#f1f3f4] flex items-center justify-center text-[#5f6368]">
+                                                <Users size={14} />
+                                            </div>
+                                            <span className="text-sm text-[#202124]">{order.supplier_name || 'Proveedor'}</span>
+                                        </div>
                                     </td>
-                                    <td className="px-8 py-6">
-                                        <span className="text-sm font-black text-slate-900">${parseFloat(order.total_amount).toLocaleString()}</span>
-                                        {parseFloat(order.savings_amount) > 0 && (
-                                            <span className="block text-[10px] text-emerald-600 font-black mt-1 uppercase">AHORRO: ${order.savings_amount}</span>
-                                        )}
+                                    <td>
+                                        <div className="flex flex-col">
+                                            <span className="text-sm text-[#202124]">{order.product_name || 'Producto'}</span>
+                                            <span className="text-[11px] text-[#5f6368] font-medium">CANT: {order.quantity}</span>
+                                        </div>
                                     </td>
-                                    <td className="px-8 py-6">
+                                    <td>
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-medium text-[#202124]">${parseFloat(order.total_amount).toLocaleString()}</span>
+                                            {parseFloat(order.savings_amount) > 0 && (
+                                                <span className="text-[10px] text-[#1e8e3e] font-bold">-{order.savings_amount} ahorro</span>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td>
                                         <StatusBadge status={order.status} />
                                     </td>
-                                    <td className="px-8 py-6">
-                                        {order.status === 'PENDING' && (
-                                            <div className="flex items-center space-x-2">
-                                                <button
-                                                    onClick={() => onUpdateOrderStatus(order.id, 'RECEIVED')}
-                                                    className="p-2 bg-emerald-100 text-emerald-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
-                                                    title="Marcar como Recibido"
-                                                >
-                                                    <CheckCircle size={18} />
-                                                </button>
-                                                <button
-                                                    onClick={() => onUpdateOrderStatus(order.id, 'REJECTED')}
-                                                    className="p-2 bg-rose-100 text-rose-600 rounded-xl hover:bg-rose-600 hover:text-white transition-all shadow-sm"
-                                                    title="Rechazar Pedido"
-                                                >
-                                                    <XCircle size={18} />
-                                                </button>
-                                            </div>
-                                        )}
-                                        {order.status !== 'PENDING' && (
-                                            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Completado</span>
-                                        )}
+                                    <td>
+                                        <div className="flex items-center justify-end space-x-2">
+                                            {order.status === 'PENDING' || order.status === 'ARRIVED' ? (
+                                                <>
+                                                    {order.status === 'PENDING' && (
+                                                        <button
+                                                            onClick={() => onUpdateOrderStatus(order.id, 'ARRIVED')}
+                                                            className="p-2 text-[#1a73e8] hover:bg-[#e8f0fe] rounded-full transition-all"
+                                                            title="Confirmar Llegada"
+                                                        >
+                                                            <Truck size={18} />
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={() => {
+                                                            setSelectedOrder(order);
+                                                            setShowReceiveModal(true);
+                                                        }}
+                                                        className="p-2 text-[#1e8e3e] hover:bg-[#e6f4ea] rounded-full transition-all"
+                                                        title="Recibir Pedido (Ingresar a Almacén)"
+                                                    >
+                                                        <CheckCircle size={18} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => onUpdateOrderStatus(order.id, 'REJECTED')}
+                                                        className="p-2 text-[#d93025] hover:bg-[#fce8e6] rounded-full transition-all"
+                                                        title="Rechazar Pedido"
+                                                    >
+                                                        <XCircle size={18} />
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <span className="text-[10px] font-bold text-[#dadce0] uppercase tracking-widest mr-2">Cerrado</span>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
-                            {orders.length === 0 && (
-                                <tr>
-                                    <td colSpan="6" className="px-8 py-20 text-center">
-                                        <div className="flex flex-col items-center justify-center">
-                                            <div className="bg-slate-50 p-6 rounded-full mb-4">
-                                                <ShoppingCart size={40} className="text-slate-300" />
-                                            </div>
-                                            <p className="text-slate-400 font-black uppercase tracking-widest text-sm">No hay órdenes registradas</p>
-                                            <button onClick={onAddOrder} className="mt-4 text-emerald-600 font-bold text-xs hover:underline uppercase tracking-widest">Crear mi primera orden</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            )}
                         </tbody>
                     </table>
                 </div>
             </div>
+
+            {orders.length === 0 && (
+                <div className="text-center py-20 bg-white rounded-2xl border border-[#dadce0] mx-4">
+                    <ShoppingCart size={48} className="mx-auto text-[#dadce0] mb-4" />
+                    <p className="text-[#5f6368] font-medium">No se han registrado órdenes de compra aún.</p>
+                </div>
+            )}
+
+            <ReceiveOrderModal
+                isOpen={showReceiveModal}
+                order={selectedOrder}
+                onClose={() => {
+                    setShowReceiveModal(false);
+                    setSelectedOrder(null);
+                }}
+                onConfirm={onUpdateOrderStatus}
+                loading={loading}
+            />
         </div>
     );
 };
 
 const StatusBadge = ({ status }) => {
     const styles = {
-        PENDING: "bg-amber-100 text-amber-700 border-amber-200",
-        RECEIVED: "bg-emerald-100 text-emerald-700 border-emerald-200",
-        REJECTED: "bg-rose-100 text-rose-700 border-rose-200",
+        PENDING: "bg-[#fff4e5] text-[#e37400] border-[#fee0b2]",
+        ARRIVED: "bg-[#e8f0fe] text-[#1a73e8] border-[#c2d7fa]",
+        RECEIVED: "bg-[#e6f4ea] text-[#1e8e3e] border-[#ceead6]",
+        REJECTED: "bg-[#fce8e6] text-[#d93025] border-[#f5c2c7]",
     };
 
     const labels = {
-        PENDING: "PENDIENTE",
-        RECEIVED: "RECIBIDO",
-        REJECTED: "RECHAZADO",
+        PENDING: "Pendiente",
+        ARRIVED: "Arribado",
+        RECEIVED: "Recibido",
+        REJECTED: "Rechazado",
     };
 
     return (
-        <span className={`px-4 py-1.5 rounded-full text-[10px] font-black border uppercase tracking-widest ${styles[status]}`}>
+        <span className={`px-3 py-1 rounded-full text-[11px] font-bold border ${styles[status]}`}>
             {labels[status]}
         </span>
     );

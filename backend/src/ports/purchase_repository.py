@@ -25,5 +25,21 @@ class PurchaseRepository(ABC):
         pass
     
     @abstractmethod
+    def link_product_to_supplier(self, supplier_id: UUID, product_id: UUID) -> bool:
+        pass
+
+    @abstractmethod
+    def update_supplier(self, supplier: Supplier) -> Supplier:
+        pass
+
+    @abstractmethod
+    def delete_supplier(self, supplier_id: UUID) -> bool:
+        pass
+
+    @abstractmethod
+    def get_supplier(self, supplier_id: UUID) -> Optional[Supplier]:
+        pass
+
+    @abstractmethod
     def update_purchase_order(self, order: PurchaseOrder) -> PurchaseOrder:
         pass

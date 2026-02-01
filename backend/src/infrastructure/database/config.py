@@ -70,5 +70,5 @@ def init_db():
     
     Esta función debe llamarse al inicio de la aplicación.
     """
-    from .models import ProductModel, UserModel, MovementModel  # Import aquí para evitar circular imports
+    from .models import ProductModel, UserModel, MovementModel, SupplierModel, PurchaseOrderModel, SalesOrderModel  # Import aquí para evitar circular imports
     Base.metadata.create_all(bind=engine)

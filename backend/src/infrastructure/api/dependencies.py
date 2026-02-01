@@ -11,7 +11,9 @@ from src.infrastructure.database.config import SessionLocal
 from src.infrastructure.repositories.postgres_repository import PostgreSQLProductRepository
 from src.infrastructure.repositories.postgres_user_repository import PostgreSQLUserRepository
 from src.infrastructure.repositories.in_memory_repository import InMemoryProductRepository
+from src.infrastructure.repositories.postgres_sales_repository import PostgresSalesRepository
 from src.ports.repository import ProductRepository, UserRepository
+from src.ports.sales_repository import SalesRepository
 
 
 # Singleton para la versión en memoria
@@ -47,11 +49,21 @@ def get_repository(db: Session = Depends(get_db)) -> ProductRepository:
     return PostgreSQLProductRepository(db)
 
 
-def get_inventory_service(repository: ProductRepository = Depends(get_repository)) -> InventoryService:
+def get_sales_repository(db: Session = Depends(get_db)) -> SalesRepository:
+    """
+    Proporciona el repositorio de ventas.
+    """
+    return PostgresSalesRepository(db)
+
+
+def get_inventory_service(
+    repository: ProductRepository = Depends(get_repository),
+    sales_repository: SalesRepository = Depends(get_sales_repository)
+) -> InventoryService:
     """
     Proporciona el servicio de inventario con las dependencias inyectadas.
     """
-    return InventoryService(repository)
+    return InventoryService(repository, sales_repository)
 
 
 # --- Auth Dependencies ---

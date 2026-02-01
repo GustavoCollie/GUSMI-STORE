@@ -4,7 +4,7 @@ Implementación de ProductRepository para PostgreSQL usando SQLAlchemy.
 from decimal import Decimal
 from typing import Optional
 from uuid import UUID
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from src.domain.entities import Product, Movement, get_local_time
 from src.domain.exceptions import ProductNotFoundError
@@ -38,6 +38,8 @@ class PostgreSQLProductRepository:
             description=model.description,
             stock=model.stock,
             sku=model.sku,
+            image_path=model.image_path,
+            tech_sheet_path=model.tech_sheet_path,
             updated_at=model.updated_at
         )
 
@@ -57,6 +59,9 @@ class PostgreSQLProductRepository:
             is_returnable=model.is_returnable,
             return_deadline=model.return_deadline,
             recipient_email=model.recipient_email,
+            sales_order_id=UUID(model.sales_order_id) if model.sales_order_id else None,
+            parent_id=UUID(model.parent_id) if model.parent_id else None,
+            product_name=model.product_name or (model.product.name if model.product else None),
             date=model.date
         )
     
@@ -70,6 +75,8 @@ class PostgreSQLProductRepository:
             description=entity.description,
             stock=entity.stock,
             sku=entity.sku,
+            image_path=entity.image_path,
+            tech_sheet_path=entity.tech_sheet_path,
             updated_at=entity.updated_at
         )
     
@@ -87,6 +94,8 @@ class PostgreSQLProductRepository:
             existing.description = product.description
             existing.stock = product.stock
             existing.sku = product.sku
+            existing.image_path = product.image_path
+            existing.tech_sheet_path = product.tech_sheet_path
 
             existing.updated_at = get_local_time()
             model = existing
@@ -161,6 +170,9 @@ class PostgreSQLProductRepository:
             is_returnable=movement.is_returnable,
             return_deadline=movement.return_deadline,
             recipient_email=movement.recipient_email,
+            sales_order_id=str(movement.sales_order_id) if movement.sales_order_id else None,
+            parent_id=str(movement.parent_id) if movement.parent_id else None,
+            product_name=movement.product_name,
             date=movement.date
         )
         self._session.add(model)
@@ -171,7 +183,10 @@ class PostgreSQLProductRepository:
         """
         Busca todos los movimientos en la base de datos.
         """
-        models = self._session.query(MovementModel).order_by(MovementModel.date.desc()).all()
+        models = self._session.query(MovementModel)\
+            .options(joinedload(MovementModel.product))\
+            .order_by(MovementModel.date.desc())\
+            .all()
         return [self._movement_to_entity(m) for m in models]
 
     def find_initial_movement(self, product_id: UUID) -> Optional['Movement']:

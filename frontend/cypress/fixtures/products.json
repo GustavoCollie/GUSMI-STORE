@@ -1,0 +1,17 @@
+{
+  "monitor": {
+    "name": "Monitor LED 24 pulgadas",
+    "sku": "MON-LED-24",
+    "description": "Monitor LED Full HD 1920x1080 Samsung"
+  },
+  "teclado": {
+    "name": "Teclado Mecanico RGB",
+    "sku": "TEC-MEC-RGB",
+    "description": "Teclado mecanico gaming con retroiluminacion RGB"
+  },
+  "mouse": {
+    "name": "Mouse Inalambrico",
+    "sku": "MOU-WIFI-01",
+    "description": "Mouse inalambrico con bateria recargable"
+  }
+}

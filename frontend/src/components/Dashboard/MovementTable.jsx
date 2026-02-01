@@ -1,198 +1,305 @@
 import React from 'react';
-import { ArrowUpRight, ArrowDownLeft, FileText, Calendar, Tag, DollarSign, Clock, Download, Printer } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, FileText, Tag, Printer, Box, FileSpreadsheet } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 export const MovementTable = ({ movements, loading }) => {
+    const [activeSubTab, setActiveSubTab] = React.useState('internal_entries'); // 'internal_entries' or 'sales'
+
+    const getMovementLabel = (move) => {
+        if (move.type === 'VENTA' || !!move.sales_order_id) return 'Venta';
+
+        const labels = {
+            'INGRESO': 'Ingreso',
+            'ENTRY': 'Ingreso',
+            'CONSUMO INTERNO': 'Consumo Interno',
+            'EXIT': 'Consumo Interno',
+            'RETURN': 'Retorno'
+        };
+        return labels[move.type] || (move.type || '').replace('_', ' ');
+    };
+
     const generateReceiptPDF = (move) => {
         const doc = new jsPDF();
         const dateStr = new Date(move.date).toLocaleString('es-CL');
-        const returnDateStr = move.return_deadline
-            ? new Date(move.return_deadline).toLocaleDateString('es-CL')
-            : 'N/A';
 
-        // Header
-        doc.setFontSize(20);
-        doc.setTextColor(40);
-        doc.text('ACTA DE RECEPCIÓN / DESPACHO', 105, 20, { align: 'center' });
+        doc.setFontSize(22);
+        doc.setTextColor(26, 115, 232); // Google Blue
+        doc.text('Comprobante de Almacén', 105, 25, { align: 'center' });
 
         doc.setFontSize(10);
-        doc.text(`Fecha de Emisión: ${dateStr}`, 105, 28, { align: 'center' });
-        doc.line(20, 35, 190, 35);
-
-        // Movement Info
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text('INFORMACIÓN DEL MOVIMIENTO', 20, 45);
-
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        const moveInfo = [
-            ['Tipo de Movimiento:', move.type === 'ENTRY' ? 'ENTRADA (REPOSICIÓN)' : 'SALIDA (DESPACHO)'],
-            ['Referencia / Guía:', move.reference],
-            ['Cantidad:', `${move.quantity} unidades`],
-            ['Solicitante:', move.applicant || 'N/A'],
-            ['Área:', move.applicant_area || 'N/A'],
-            ['Devolutivo:', move.is_returnable ? 'SÍ' : 'NO'],
-            ['Fecha Retorno:', returnDateStr],
-            ['Email Receptor:', move.recipient_email || 'N/A']
-        ];
+        doc.setTextColor(95, 99, 104);
+        doc.text(`Collie Inventarios Intelligent System • ${dateStr}`, 105, 32, { align: 'center' });
+        doc.line(20, 40, 190, 40);
 
         autoTable(doc, {
             startY: 50,
-            head: [['Campo', 'Detalle']],
-            body: moveInfo,
-            theme: 'striped',
-            headStyles: { fillColor: [59, 130, 246] }
+            head: [['Detalle del Movimiento', 'Información']],
+            body: [
+                ['Tipo:', getMovementLabel(move)],
+                ['Producto:', move.product_name || 'N/A'],
+                ['Referencia:', move.reference],
+                ['Cantidad:', `${move.quantity} unidades`],
+                [(move.type === 'VENTA' || !!move.sales_order_id) ? 'Cliente:' : 'Responsable:', move.applicant || 'N/A'],
+                ['Área:', move.applicant_area || 'N/A'],
+                ['Retornable:', move.is_returnable ? 'SÍ' : 'NO'],
+            ],
+            theme: 'grid',
+            headStyles: { fillColor: [26, 115, 232] },
+            styles: { fontSize: 10, cellPadding: 5 }
         });
-
-        // Signatures
-        const finalY = doc.lastAutoTable.finalY + 40;
-        doc.line(20, finalY, 80, finalY);
-        doc.text('Firma Jefe de Almacén', 50, finalY + 5, { align: 'center' });
-
-        doc.line(130, finalY, 190, finalY);
-        doc.text('Firma Receptor', 160, finalY + 5, { align: 'center' });
 
         doc.save(`acta_${move.reference || move.id}.pdf`);
     };
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center py-20 animate-pulse">
-                <div className="w-12 h-12 border-4 border-primary-500/20 border-t-primary-500 rounded-full animate-spin mb-4"></div>
-                <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Cargando Historial...</p>
+            <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#1a73e8] border-b-transparent"></div>
             </div>
         );
     }
 
-    if (movements.length === 0) {
-        return (
-            <div className="text-center py-20 glass-panel rounded-3xl border-dashed border-2 border-slate-200">
-                <div className="bg-slate-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-200">
-                    <Clock size={32} className="text-slate-400" />
-                </div>
-                <h3 className="text-xl font-bold text-slate-600">Sin movimientos</h3>
-                <p className="text-slate-400 mt-2">Aún no se han registrado entradas o salidas de productos.</p>
-            </div>
-        );
-    }
+    const filteredMovements = (movements || []).filter(m => {
+        const isSale = m.type === 'VENTA' || !!m.sales_order_id;
+        if (activeSubTab === 'sales') {
+            return isSale;
+        } else {
+            return !isSale;
+        }
+    });
+
+    const handleExportExcel = () => {
+        const title = "Historial de Movimientos";
+        const description = "Trazabilidad completa de entradas y salidas de almacén";
+        const subtitle = activeSubTab === 'sales' ? "SALIDAS DE VENTAS" : "INGRESOS Y CONSUMO INTERNO";
+
+        // Define Headers based on tab
+        const headers = activeSubTab === 'sales'
+            ? ['Tipo', 'Producto', 'Referencia', 'Cantidad', 'Cliente', 'Fecha', 'Hora']
+            : ['Tipo', 'Producto', 'Referencia', 'Cantidad', 'Responsable', 'Área', 'Retornable', 'Fecha Retorno', 'Fecha', 'Hora'];
+
+        // Map data rows
+        const dataRows = filteredMovements.map(m => {
+            const common = [
+                getMovementLabel(m),
+                m.product_name || '—',
+                m.reference,
+                m.quantity,
+            ];
+
+            const date = new Date(m.date);
+            const dateStr = date.toLocaleDateString('es-CL');
+            const timeStr = date.toLocaleTimeString('es-CL');
+
+            const returnDeadlineStr = m.return_deadline
+                ? new Date(m.return_deadline).toLocaleDateString('es-CL')
+                : '—';
+
+            if (activeSubTab === 'sales') {
+                return [...common, m.applicant || '—', dateStr, timeStr];
+            } else {
+                return [
+                    ...common,
+                    m.applicant || '—',
+                    m.applicant_area || '—',
+                    m.is_returnable ? 'SÍ' : 'NO',
+                    returnDeadlineStr,
+                    dateStr,
+                    timeStr
+                ];
+            }
+        });
+
+        // Create Worksheet using Array of Arrays
+        // Row 1: Title
+        // Row 2: Description
+        // Row 3: Subtitle
+        // Row 4: Empty
+        // Row 5: Headers
+        // Row 6+: Data
+        const wsData = [
+            [title],
+            [description],
+            [subtitle],
+            [], // Empty row
+            headers,
+            ...dataRows
+        ];
+
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+        // Merge cells for Title, Description, and Subtitle
+        // s: start, e: end, r: row, c: col
+        if (!ws['!merges']) ws['!merges'] = [];
+        ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } }); // Title
+        ws['!merges'].push({ s: { r: 1, c: 0 }, e: { r: 1, c: headers.length - 1 } }); // Description
+        ws['!merges'].push({ s: { r: 2, c: 0 }, e: { r: 2, c: headers.length - 1 } }); // Subtitle
+
+        // Basic Column Widths (autosize approximation)
+        const wscols = headers.map(() => ({ wch: 20 }));
+        ws['!cols'] = wscols;
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Movimientos");
+
+        const filename = `Movimientos_${subtitle.replace(/ /g, '_')}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        XLSX.writeFile(wb, filename);
+    };
+
+    const getStatusStyle = (move) => {
+        if (move.type === 'VENTA' || !!move.sales_order_id) return 'bg-[#e8f0fe] text-[#1a73e8]';
+
+        switch (move.type) {
+            case 'INGRESO':
+            case 'ENTRY':
+                return 'bg-[#e6f4ea] text-[#1e8e3e]';
+            case 'CONSUMO INTERNO':
+            case 'EXIT':
+                return 'bg-[#fce8e6] text-[#d93025]';
+            case 'RETURN':
+                return 'bg-[#fef7e0] text-[#b06000]';
+            default:
+                return 'bg-[#f1f3f4] text-[#5f6368]';
+        }
+    };
+
+    const getMovementIcon = (move) => {
+        const type = move.type;
+        if (type === 'INGRESO' || type === 'ENTRY' || type === 'RETURN') return <ArrowDownLeft size={16} />;
+        return <ArrowUpRight size={16} />;
+    };
 
     return (
-        <div className="glass-panel rounded-3xl overflow-hidden animate-fade-in border border-slate-200 bg-white/50 shadow-xl">
-            <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                    <thead>
-                        <tr className="bg-slate-50/50 border-b border-slate-100">
-                            <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Tipo</th>
-                            <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Referencia</th>
-                            <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Cantidad</th>
-                            <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Solicitante</th>
-                            <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 text-center">Acciones</th>
-                            <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 text-right">Fecha</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50">
-                        {movements.map((move, index) => (
-                            <tr
-                                key={move.id}
-                                className="group hover:bg-slate-50/80 transition-colors"
-                                style={{ animationDelay: `${index * 50}ms` }}
-                            >
-                                <td className="px-6 py-4">
-                                    <div className="flex items-center space-x-3">
-                                        <div className={`p-2 rounded-xl ${move.type === 'ENTRY'
-                                            ? 'bg-emerald-50 text-emerald-600 shadow-sm border border-emerald-100'
-                                            : 'bg-rose-50 text-rose-600 shadow-sm border border-rose-100'
-                                            }`}>
-                                            {move.type === 'ENTRY' ? <ArrowDownLeft size={16} /> : <ArrowUpRight size={16} />}
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span className={`text-xs font-black tracking-wider uppercase ${move.type === 'ENTRY' ? 'text-emerald-600' : 'text-rose-600'
-                                                }`}>
-                                                {move.type === 'ENTRY' ? 'Entrada' : 'Salida'}
-                                            </span>
-                                            {move.is_returnable && (
-                                                <div className="flex flex-col gap-1 mt-1">
-                                                    <span className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100 w-fit">
-                                                        <ArrowUpRight size={10} className="rotate-45" />
-                                                        RETORNABLE
-                                                    </span>
-                                                    {move.return_deadline && (
-                                                        <span className="text-[9px] text-amber-600/80 font-bold uppercase tracking-tight">
-                                                            Retorno: {new Date(move.return_deadline).toLocaleDateString('es-CL')}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                    <div className="flex items-center space-x-3">
-                                        <div className="text-slate-400 bg-slate-100 p-1.5 rounded-lg border border-slate-200">
-                                            <Tag size={14} />
-                                        </div>
-                                        <span className="text-sm font-bold text-slate-800">{move.reference}</span>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                    <div className="flex items-center space-x-2">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-primary-500"></div>
-                                        <span className="text-sm font-black text-slate-900">{move.quantity}</span>
-                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">unidades</span>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                    <div className="flex flex-col">
-                                        <span className="text-sm font-bold text-slate-800 uppercase tracking-tight">{move.applicant || '—'}</span>
-                                        <div className="flex flex-col gap-0.5">
-                                            {move.applicant_area && (
-                                                <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wide">{move.applicant_area}</span>
-                                            )}
-                                            {move.recipient_email && (
-                                                <span className="text-[9px] text-primary-600 font-medium">{move.recipient_email}</span>
-                                            )}
-                                        </div>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4 text-center">
-                                    <div className="flex items-center justify-center gap-2">
-                                        {move.document_path && (
-                                            <a
-                                                href={`http://localhost:8000/${move.document_path.replace(/\\/g, '/')}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors border border-blue-100"
-                                                title="Ver Documento"
-                                            >
-                                                <FileText size={16} />
-                                            </a>
-                                        )}
-                                        <button
-                                            onClick={() => generateReceiptPDF(move)}
-                                            className="p-2 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors border border-emerald-100"
-                                            title="Generar Acta"
-                                        >
-                                            <Printer size={16} />
-                                        </button>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4 text-right">
-                                    <div className="flex flex-col items-end">
-                                        <span className="text-xs font-bold text-slate-600">
-                                            {new Date(move.date).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                                        </span>
-                                        <span className="text-[10px] text-slate-400 font-medium">
-                                            {new Date(move.date).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
-                                        </span>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+        <div className="bg-white">
+            <div className="flex items-center justify-between px-6 pt-4 border-b border-[#dadce0]">
+                <div className="flex items-center space-x-1">
+                    <button
+                        onClick={() => setActiveSubTab('internal_entries')}
+                        className={`px-4 py-2.5 text-xs font-bold uppercase tracking-widest transition-all relative ${activeSubTab === 'internal_entries' ? 'text-[#1a73e8]' : 'text-[#5f6368] hover:bg-[#f8f9fa] rounded-t-lg'}`}
+                    >
+                        Ingresos y Consumo Interno
+                        {activeSubTab === 'internal_entries' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#1a73e8] rounded-t-full"></div>}
+                    </button>
+                    <button
+                        onClick={() => setActiveSubTab('sales')}
+                        className={`px-4 py-2.5 text-xs font-bold uppercase tracking-widest transition-all relative ${activeSubTab === 'sales' ? 'text-[#1a73e8]' : 'text-[#5f6368] hover:bg-[#f8f9fa] rounded-t-lg'}`}
+                    >
+                        Salidas de Ventas
+                        {activeSubTab === 'sales' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#1a73e8] rounded-t-full"></div>}
+                    </button>
+                </div>
+
+                <div className="pb-2">
+                    <button
+                        onClick={handleExportExcel}
+                        className="flex items-center space-x-2 px-3 py-1.5 bg-[#e6f4ea] text-[#1e8e3e] rounded-lg hover:bg-[#ceead6] transition-colors text-xs font-medium border border-[#1e8e3e]/20"
+                    >
+                        <FileSpreadsheet size={16} />
+                        <span>Exportar Excel</span>
+                    </button>
+                </div>
             </div>
+
+            {filteredMovements.length === 0 ? (
+                <div className="text-center py-20 animate-fade-in">
+                    <Box className="mx-auto h-12 w-12 text-[#dadce0] mb-4" />
+                    <p className="text-[#5f6368] font-medium text-sm">No hay movimientos en esta categoría.</p>
+                </div>
+            ) : (
+                <div className="overflow-x-auto">
+                    <table className="google-table">
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Producto</th>
+                                <th>Referencia</th>
+                                <th>Cantidad</th>
+                                <th>Responsable / Cliente</th>
+                                <th className="text-center">Docs</th>
+                                <th className="text-right">Fecha / Hora</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredMovements.map((move) => (
+                                <tr key={move.id} className="hover:bg-[#f8f9fa] transition-colors">
+                                    <td>
+                                        <div className="flex items-center space-x-3">
+                                            <div className={`p-2 rounded-full ${getStatusStyle(move)}`}>
+                                                {getMovementIcon(move)}
+                                            </div>
+                                            <span className="text-[11px] font-bold uppercase tracking-tighter">
+                                                {getMovementLabel(move)}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div className="flex items-center space-x-2">
+                                            <Tag size={14} className="text-[#5f6368]" />
+                                            <span className="text-sm font-medium text-[#202124] capitalize">
+                                                {move.product_name || '—'}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-medium text-[#202124]">{move.reference}</span>
+                                            {move.is_returnable && (
+                                                <span className="text-[10px] font-bold text-[#b06000] bg-[#fef7e0] px-1.5 py-0.5 rounded border border-[#feefc3] w-fit mt-1">
+                                                    RETORNABLE
+                                                </span>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span className="font-medium text-[#202124]">{move.quantity}</span>
+                                        <span className="text-xs text-[#5f6368] ml-1">uds</span>
+                                    </td>
+                                    <td>
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-medium text-[#202124]">{move.applicant || '—'}</span>
+                                            <span className="text-[11px] text-[#5f6368]">{move.applicant_area}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div className="flex items-center justify-center space-x-2">
+                                            {move.document_path && (
+                                                <a
+                                                    href={`http://localhost:8000/${move.document_path.replace(/\\/g, '/')}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="p-2 text-[#5f6368] hover:bg-[#e8f0fe] hover:text-[#1a73e8] rounded-full transition-all"
+                                                    title="Ver Documento"
+                                                >
+                                                    <FileText size={18} />
+                                                </a>
+                                            )}
+                                            <button
+                                                onClick={() => generateReceiptPDF(move)}
+                                                className="p-2 text-[#5f6368] hover:bg-[#e6f4ea] hover:text-[#1e8e3e] rounded-full transition-all"
+                                                title="Imprimir Comprobante"
+                                            >
+                                                <Printer size={18} />
+                                            </button>
+                                        </div>
+                                    </td>
+                                    <td className="text-right">
+                                        <div className="flex flex-col items-end">
+                                            <span className="text-sm font-medium text-[#202124]">
+                                                {new Date(move.date).toLocaleDateString('es-CL')}
+                                            </span>
+                                            <span className="text-[11px] text-[#5f6368]">
+                                                {new Date(move.date).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
         </div>
     );
 };

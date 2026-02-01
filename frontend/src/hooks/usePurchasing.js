@@ -10,21 +10,28 @@ export const usePurchasing = () => {
 
     const fetchData = async () => {
         try {
+            console.log("Fetching purchasing data...");
             setLoading(true);
             const [suppliersRes, ordersRes, kpisRes] = await Promise.all([
                 purchasingService.getSuppliers(),
                 purchasingService.getOrders(),
                 purchasingService.getKPIs()
             ]);
+            console.log("Purchasing data fetched successfully:", {
+                suppliers: suppliersRes.data.length,
+                orders: ordersRes.data.length,
+                kpis: kpisRes.data
+            });
             setSuppliers(suppliersRes.data);
             setOrders(ordersRes.data);
             setKpis(kpisRes.data);
             setError(null);
         } catch (err) {
-            setError('Error al cargar datos de compras.');
-            console.error(err);
+            console.error("Error fetching purchasing data:", err);
+            setError('Error al cargar datos de compras. Verifique la conexión con el servidor.');
         } finally {
             setLoading(false);
+            console.log("Purchasing loading finished.");
         }
     };
 
@@ -32,6 +39,19 @@ export const usePurchasing = () => {
         const res = await purchasingService.createSupplier(data);
         setSuppliers(prev => [...prev, res.data]);
         return res.data;
+    };
+
+    const updateSupplier = async (id, data) => {
+        const res = await purchasingService.updateSupplier(id, data);
+        setSuppliers(prev => prev.map(s => s.id === id ? res.data : s));
+        fetchData(); // Refresh to propagate name changes to orders
+        return res.data;
+    };
+
+    const deleteSupplier = async (id) => {
+        await purchasingService.deleteSupplier(id);
+        setSuppliers(prev => prev.filter(s => s.id !== id));
+        fetchData(); // Refresh to catch any side effects like KPI updates
     };
 
     const createOrder = async (data) => {
@@ -60,6 +80,8 @@ export const usePurchasing = () => {
         error,
         refresh: fetchData,
         createSupplier,
+        updateSupplier,
+        deleteSupplier,
         createOrder,
         updateOrder
     };

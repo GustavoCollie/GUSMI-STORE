@@ -73,6 +73,8 @@ export const useProducts = () => {
             let response;
             if (type === 'receive') {
                 response = await inventoryService.receiveStock(id, data);
+            } else if (type === 'return') {
+                response = await inventoryService.receiveStock(id, { ...data, is_return: true });
             } else {
                 response = await inventoryService.sellProduct(id, data);
             }

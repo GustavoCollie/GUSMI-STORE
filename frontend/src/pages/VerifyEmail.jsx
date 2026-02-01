@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import { CheckCircle, XCircle, Loader2, ArrowRight } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2, ArrowRight, Package } from 'lucide-react';
 
 const VerifyEmail = () => {
     const [status, setStatus] = useState('verifying'); // 'verifying', 'success', 'error'

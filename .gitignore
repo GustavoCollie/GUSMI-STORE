@@ -58,3 +58,39 @@ htmlcov/
 # OS
 .DS_Store
 Thumbs.db
+nul
+
+# Database & Logs
+*.db
+*.log
+backend/app_debug.log
+
+# Uploads (user-generated files)
+backend/uploads/
+
+# Debug/test scripts at root
+check_db.py
+db_output.txt
+test_api.py
+test_auto_association.py
+
+# Backend utility/debug scripts
+backend/check_db.py
+backend/check_db_v2.py
+backend/check_products.py
+backend/cleanup_generated.py
+backend/debug_supplier.py
+backend/fix_orders.py
+backend/generate_products.py
+backend/migrate_sales_address.py
+backend/regenerate_products.py
+backend/reset_database.py
+backend/reset_db.py
+backend/seed_products.py
+backend/test_association.py
+backend/test_create_and_receive.py
+backend/test_stock_update.py
+backend/update_db.py
+
+# Claude
+.claude/
