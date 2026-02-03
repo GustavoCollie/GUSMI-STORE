@@ -8,7 +8,8 @@ from src.application.purchase_service import PurchaseService
 from src.domain.purchase_schemas import (
     SupplierCreate, SupplierResponse, SupplierUpdate,
     PurchaseOrderCreate, PurchaseOrderResponse, 
-    PurchaseOrderUpdate, PurchaseKPIsResponse
+    PurchaseOrderUpdate, PurchaseKPIsResponse,
+    PurchaseOrderDetailUpdate
 )
 from src.infrastructure.api.dependencies import get_db, get_inventory_service
 from src.application.services import InventoryService
@@ -181,6 +182,27 @@ async def update_order(
     except Exception as e:
         logger.error(f"Unexpected error in update_order {order_id}: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/orders/{order_id}")
+def delete_order(
+    order_id: UUID,
+    service: Annotated[PurchaseService, Depends(get_purchase_service)]
+):
+    success = service.delete_purchase_order(order_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Order not found")
+    return {"message": "Order deleted successfully"}
+
+@router.patch("/orders/{order_id}/detail", response_model=PurchaseOrderResponse)
+def update_order_detail(
+    order_id: UUID,
+    request: PurchaseOrderDetailUpdate,
+    service: Annotated[PurchaseService, Depends(get_purchase_service)]
+):
+    order = service.update_purchase_order(order_id, **request.model_dump(exclude_unset=True))
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    return PurchaseOrderResponse.model_validate(order)
 
 @router.get("/kpis", response_model=PurchaseKPIsResponse)
 def get_kpis(service: Annotated[PurchaseService, Depends(get_purchase_service)]):

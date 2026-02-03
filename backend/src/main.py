@@ -66,7 +66,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173", "http://localhost:5174"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -78,6 +78,8 @@ app.include_router(purchase_router, prefix="/api/v1/purchasing")
 app.include_router(sales_router, prefix="/api/v1/sales")
 from src.infrastructure.api.analytics_routes import router as analytics_router
 app.include_router(analytics_router, prefix="/api/v1/analytics")
+from src.infrastructure.api.public_routes import router as public_router
+app.include_router(public_router, prefix="/api/v1/public")
 
 # Servir archivos estáticos para documentos subidos
 from fastapi.staticfiles import StaticFiles

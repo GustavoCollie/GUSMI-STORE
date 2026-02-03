@@ -31,8 +31,15 @@ class Product:
     description: str
     stock: int
     sku: str
+    retail_price: Optional[Decimal] = None
     image_path: Optional[str] = None
     tech_sheet_path: Optional[str] = None
+    is_preorder: bool = False
+    preorder_price: Optional[Decimal] = None
+    estimated_delivery_date: Optional[datetime] = None
+    preorder_description: Optional[str] = None
+    stripe_price_id: Optional[str] = None
+    has_pending_purchase_orders: bool = False
     id: UUID = field(default_factory=uuid4)
     updated_at: datetime = field(default_factory=get_local_time)
     

@@ -26,8 +26,14 @@ class InventoryService:
         name: str,
         description: str,
         sku: str,
+        retail_price: Optional[Decimal] = None,
         image_path: Optional[str] = None,
-        tech_sheet_path: Optional[str] = None
+        tech_sheet_path: Optional[str] = None,
+        is_preorder: bool = False,
+        preorder_price: Optional[Decimal] = None,
+        estimated_delivery_date: Optional[datetime] = None,
+        preorder_description: Optional[str] = None,
+        stripe_price_id: Optional[str] = None
     ) -> Product:
         """
         Creates a new product with 0 initial stock.
@@ -37,8 +43,14 @@ class InventoryService:
             description=description,
             stock=0, # Siempre inicia con 0 stock
             sku=sku,
+            retail_price=retail_price,
             image_path=image_path,
-            tech_sheet_path=tech_sheet_path
+            tech_sheet_path=tech_sheet_path,
+            is_preorder=is_preorder,
+            preorder_price=preorder_price,
+            estimated_delivery_date=estimated_delivery_date,
+            preorder_description=preorder_description,
+            stripe_price_id=stripe_price_id
         )
         return self._repository.save(product)
     
@@ -197,7 +209,13 @@ class InventoryService:
         product_id: UUID,
         name: str,
         description: str,
-        sku: str
+        sku: str,
+        retail_price: Optional[Decimal] = None,
+        is_preorder: bool = False,
+        preorder_price: Optional[Decimal] = None,
+        estimated_delivery_date: Optional[datetime] = None,
+        preorder_description: Optional[str] = None,
+        stripe_price_id: Optional[str] = None
     ) -> Product:
         """
         Full update of product details (PUT).
@@ -206,6 +224,12 @@ class InventoryService:
         product.name = name
         product.description = description
         product.sku = sku
+        product.retail_price = retail_price
+        product.is_preorder = is_preorder
+        product.preorder_price = preorder_price
+        product.estimated_delivery_date = estimated_delivery_date
+        product.preorder_description = preorder_description
+        product.stripe_price_id = stripe_price_id
         
         return self._repository.save(product)
 

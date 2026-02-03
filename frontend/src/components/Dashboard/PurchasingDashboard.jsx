@@ -13,7 +13,9 @@ import {
     FileText,
     TrendingUp,
     Package,
-    FileSpreadsheet
+    FileSpreadsheet,
+    Edit,
+    Trash2
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { ReceiveOrderModal } from './ReceiveOrderModal';
@@ -27,7 +29,10 @@ export const PurchasingDashboard = ({
     onAddSupplier,
     onAddProduct,
     onUpdateOrderStatus,
-    error
+    onEditOrder,
+    onDeleteOrder,
+    error,
+    showActions = true
 }) => {
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showReceiveModal, setShowReceiveModal] = useState(false);
@@ -175,29 +180,31 @@ export const PurchasingDashboard = ({
             </div>
 
             {/* Actions Section */}
-            <div className="flex items-center space-x-4">
-                <button
-                    onClick={onAddOrder}
-                    className="flex items-center space-x-2 bg-[#1a73e8] text-white px-6 py-3 rounded-full font-medium text-sm hover:bg-[#1765cc] transition-all shadow-sm"
-                >
-                    <Plus size={18} />
-                    <span>Nueva Orden de Compra</span>
-                </button>
-                <button
-                    onClick={onAddProduct}
-                    className="flex items-center space-x-2 bg-white text-[#1a73e8] border border-[#1a73e8] px-6 py-3 rounded-full font-medium text-sm hover:bg-[#e8f0fe] transition-all shadow-sm"
-                >
-                    <Package size={18} />
-                    <span>Registrar Nuevo Artículo</span>
-                </button>
-                <button
-                    onClick={onAddSupplier}
-                    className="flex items-center space-x-2 bg-white text-[#5f6368] border border-[#dadce0] px-6 py-3 rounded-full font-medium text-sm hover:bg-[#f8f9fa] transition-all"
-                >
-                    <Users size={18} />
-                    <span>Gestionar Proveedores</span>
-                </button>
-            </div>
+            {showActions && (
+                <div className="flex items-center space-x-4">
+                    <button
+                        onClick={onAddOrder}
+                        className="flex items-center space-x-2 bg-[#1a73e8] text-white px-6 py-3 rounded-full font-medium text-sm hover:bg-[#1765cc] transition-all shadow-sm"
+                    >
+                        <Plus size={18} />
+                        <span>Nueva Orden de Compra</span>
+                    </button>
+                    <button
+                        onClick={onAddProduct}
+                        className="flex items-center space-x-2 bg-white text-[#1a73e8] border border-[#1a73e8] px-6 py-3 rounded-full font-medium text-sm hover:bg-[#e8f0fe] transition-all shadow-sm"
+                    >
+                        <Package size={18} />
+                        <span>Registrar Nuevo Artículo</span>
+                    </button>
+                    <button
+                        onClick={onAddSupplier}
+                        className="flex items-center space-x-2 bg-white text-[#5f6368] border border-[#dadce0] px-6 py-3 rounded-full font-medium text-sm hover:bg-[#f8f9fa] transition-all"
+                    >
+                        <Users size={18} />
+                        <span>Gestionar Proveedores</span>
+                    </button>
+                </div>
+            )}
 
             {/* Orders Table */}
             <div className="bg-white border border-[#dadce0] rounded-2xl overflow-hidden shadow-sm">
@@ -298,6 +305,24 @@ export const PurchasingDashboard = ({
                                                     >
                                                         <XCircle size={18} />
                                                     </button>
+                                                    {order.status === 'PENDING' && (
+                                                        <>
+                                                            <button
+                                                                onClick={() => onEditOrder(order)}
+                                                                className="p-2 text-[#5f6368] hover:bg-[#f8f9fa] rounded-full transition-all"
+                                                                title="Editar Orden"
+                                                            >
+                                                                <Edit size={18} />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => onDeleteOrder(order.id)}
+                                                                className="p-2 text-[#d93025] hover:bg-[#fce8e6] rounded-full transition-all"
+                                                                title="Eliminar Orden"
+                                                            >
+                                                                <Trash2 size={18} />
+                                                            </button>
+                                                        </>
+                                                    )}
                                                 </>
                                             ) : (
                                                 <span className="text-[10px] font-bold text-[#dadce0] uppercase tracking-widest mr-2">Cerrado</span>

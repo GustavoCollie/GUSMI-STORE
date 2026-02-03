@@ -38,8 +38,15 @@ class PostgreSQLProductRepository:
             description=model.description,
             stock=model.stock,
             sku=model.sku,
+            retail_price=model.retail_price,
             image_path=model.image_path,
             tech_sheet_path=model.tech_sheet_path,
+            is_preorder=bool(model.is_preorder) if hasattr(model, 'is_preorder') else False,
+            preorder_price=model.preorder_price,
+            estimated_delivery_date=model.estimated_delivery_date,
+            preorder_description=model.preorder_description,
+            stripe_price_id=model.stripe_price_id,
+            has_pending_purchase_orders=any(po.status == "PENDING" for po in model.purchase_orders),
             updated_at=model.updated_at
         )
 
@@ -75,8 +82,14 @@ class PostgreSQLProductRepository:
             description=entity.description,
             stock=entity.stock,
             sku=entity.sku,
+            retail_price=entity.retail_price,
             image_path=entity.image_path,
             tech_sheet_path=entity.tech_sheet_path,
+            is_preorder=entity.is_preorder,
+            preorder_price=entity.preorder_price,
+            estimated_delivery_date=entity.estimated_delivery_date,
+            preorder_description=entity.preorder_description,
+            stripe_price_id=entity.stripe_price_id,
             updated_at=entity.updated_at
         )
     
@@ -94,8 +107,14 @@ class PostgreSQLProductRepository:
             existing.description = product.description
             existing.stock = product.stock
             existing.sku = product.sku
+            existing.retail_price = product.retail_price
             existing.image_path = product.image_path
             existing.tech_sheet_path = product.tech_sheet_path
+            existing.is_preorder = product.is_preorder
+            existing.preorder_price = product.preorder_price
+            existing.estimated_delivery_date = product.estimated_delivery_date
+            existing.preorder_description = product.preorder_description
+            existing.stripe_price_id = product.stripe_price_id
 
             existing.updated_at = get_local_time()
             model = existing

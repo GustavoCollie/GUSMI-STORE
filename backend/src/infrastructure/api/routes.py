@@ -41,16 +41,12 @@ def get_movements(
     return [MovementResponse.model_validate(m) for m in movements]
 
 
-@router.get(
-    "",
-    response_model=list[ProductResponse],
-    summary="Listar productos",
-    description="Obtiene todos los productos del inventario"
-)
-def list_products(
+@router.get("", response_model=list[ProductResponse])
+async def list_products(
     inv_service: Annotated[InventoryService, Depends(get_inventory_service)]
 ) -> list[ProductResponse]:
-    return inv_service.list_products()
+    products = inv_service.list_products()
+    return [ProductResponse.model_validate(p) for p in products]
 
 
 @router.get(
@@ -79,36 +75,57 @@ async def create_product(
     name: str = Form(...),
     description: str = Form(...),
     sku: str = Form(...),
+    retail_price: Optional[float] = Form(None),
+    stripe_price_id: Optional[str] = Form(None),
+    is_preorder: bool = Form(False),
+    preorder_price: Optional[float] = Form(None),
+    estimated_delivery_date: Optional[str] = Form(None),
+    preorder_description: Optional[str] = Form(None),
     image_file: Optional[UploadFile] = File(None),
     tech_sheet_file: Optional[UploadFile] = File(None)
 ) -> ProductResponse:
     image_path = None
     tech_sheet_path = None
-    
+
     import os
+    from decimal import Decimal
     upload_dir = "uploads/products"
     os.makedirs(f"{upload_dir}/images", exist_ok=True)
     os.makedirs(f"{upload_dir}/specs", exist_ok=True)
-    
+
     if image_file:
         image_path = f"{upload_dir}/images/{uuid.uuid4()}_{image_file.filename}"
         with open(image_path, "wb") as buffer:
             content = await image_file.read()
             buffer.write(content)
-            
+
     if tech_sheet_file:
         tech_sheet_path = f"{upload_dir}/specs/{uuid.uuid4()}_{tech_sheet_file.filename}"
         with open(tech_sheet_path, "wb") as buffer:
             content = await tech_sheet_file.read()
             buffer.write(content)
-            
+
     try:
+        from src.domain.entities import get_local_time
+        delivery_date = None
+        if estimated_delivery_date:
+            try:
+                delivery_date = datetime.fromisoformat(estimated_delivery_date.replace('Z', '+00:00'))
+            except ValueError:
+                delivery_date = datetime.strptime(estimated_delivery_date, "%Y-%m-%d")
+
         product = inv_service.create_product(
             name=name,
             description=description,
             sku=sku,
+            retail_price=Decimal(str(retail_price)) if retail_price is not None else None,
             image_path=image_path,
-            tech_sheet_path=tech_sheet_path
+            tech_sheet_path=tech_sheet_path,
+            is_preorder=is_preorder,
+            preorder_price=Decimal(str(preorder_price)) if preorder_price is not None else None,
+            estimated_delivery_date=delivery_date,
+            preorder_description=preorder_description,
+            stripe_price_id=stripe_price_id
         )
         return ProductResponse.model_validate(product)
     except Exception as e:
@@ -169,25 +186,45 @@ async def patch_product(
     name: Optional[str] = Form(None),
     description: Optional[str] = Form(None),
     sku: Optional[str] = Form(None),
+    retail_price: Optional[float] = Form(None),
+    stripe_price_id: Optional[str] = Form(None),
+    is_preorder: Optional[bool] = Form(None),
+    preorder_price: Optional[float] = Form(None),
+    estimated_delivery_date: Optional[str] = Form(None),
+    preorder_description: Optional[str] = Form(None),
     initial_reference: Optional[str] = Form(None),
-    file: Optional[UploadFile] = File(None)
+    tech_sheet_file: Optional[UploadFile] = File(None)
 ) -> ProductResponse:
     document_path = None
-    if file:
+    if tech_sheet_file:
         import os
         upload_dir = "uploads/documents"
         os.makedirs(upload_dir, exist_ok=True)
-        document_path = f"{upload_dir}/{uuid.uuid4()}_{file.filename}"
+        document_path = f"{upload_dir}/{uuid.uuid4()}_{tech_sheet_file.filename}"
         with open(document_path, "wb") as buffer:
-            content = await file.read()
+            content = await tech_sheet_file.read()
             buffer.write(content)
-            
+
+    print(f"DEBUG: patch_product called for {product_id}")
+    print(f"DEBUG: is_preorder received={is_preorder} type={type(is_preorder)}")
     try:
+        from decimal import Decimal
         # Preparar kwargs para campos de producto
         product_updates = {}
         if name is not None: product_updates['name'] = name
         if description is not None: product_updates['description'] = description
         if sku is not None: product_updates['sku'] = sku
+        if retail_price is not None: product_updates['retail_price'] = Decimal(str(retail_price))
+        if stripe_price_id is not None: product_updates['stripe_price_id'] = stripe_price_id
+        if is_preorder is not None: product_updates['is_preorder'] = is_preorder
+        if preorder_price is not None: product_updates['preorder_price'] = Decimal(str(preorder_price))
+        if preorder_description is not None: product_updates['preorder_description'] = preorder_description
+        
+        if estimated_delivery_date:
+            try:
+                product_updates['estimated_delivery_date'] = datetime.fromisoformat(estimated_delivery_date.replace('Z', '+00:00'))
+            except ValueError:
+                product_updates['estimated_delivery_date'] = datetime.strptime(estimated_delivery_date, "%Y-%m-%d")
 
         product = inv_service.patch_product(
             product_id=product_id,

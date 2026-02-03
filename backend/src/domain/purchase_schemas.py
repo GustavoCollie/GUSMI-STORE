@@ -60,6 +60,18 @@ class PurchaseOrderUpdate(BaseModel):
     invoice_path: Optional[str] = None
     referral_guide_path: Optional[str] = None
 
+class PurchaseOrderDetailUpdate(BaseModel):
+    supplier_id: Optional[UUID] = None
+    product_id: Optional[UUID] = None
+    quantity: Optional[int] = Field(None, gt=0)
+    unit_price: Optional[Decimal] = Field(None, gt=0)
+    expected_delivery_date: Optional[datetime] = None
+    currency: Optional[str] = Field(None, pattern="^(USD|PEN)$")
+    savings_amount: Optional[Decimal] = None
+    freight_amount: Optional[Decimal] = None
+    other_expenses_amount: Optional[Decimal] = None
+    other_expenses_description: Optional[str] = None
+
 class PurchaseOrderResponse(BaseModel):
     id: UUID
     supplier_id: UUID

@@ -46,7 +46,12 @@ class AuthService:
         saved_user = self._user_repository.save(user)
         
         # Send verification email
-        await self._email_service.send_verification_email(user.email, token)
+        try:
+            await self._email_service.send_verification_email(user.email, token)
+        except Exception as e:
+            # Don't fail the registration if email fails
+            import logging
+            logging.getLogger(__name__).error(f"Failed to send verification email to {user.email}: {e}")
         
         return saved_user
 

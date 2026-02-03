@@ -11,6 +11,7 @@ import {
     AlertTriangle,
     Truck,
     CreditCard,
+    Search,
     FileSpreadsheet,
     Printer,
     Pencil,
@@ -28,6 +29,9 @@ export const SalesDashboard = ({
     onDeleteOrder,
     error
 }) => {
+    const [statusFilter, setStatusFilter] = useState('ALL');
+    const [productSearch, setProductSearch] = useState('');
+
     if (loading && !kpis && !error) {
         return (
             <div className="flex flex-col justify-center items-center h-96 space-y-4">
@@ -244,6 +248,34 @@ export const SalesDashboard = ({
         }
     ];
 
+    const filteredOrders = orders
+        .filter(order => {
+            const matchesStatus = statusFilter === 'ALL' || order.status === statusFilter;
+            const matchesProduct = order.product_name.toLowerCase().includes(productSearch.toLowerCase()) ||
+                `OV-${order.id.substring(0, 6)}`.toLowerCase().includes(productSearch.toLowerCase());
+            return matchesStatus && matchesProduct;
+        })
+        .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+    // Build FIFO queue positions for PENDING orders
+    const pendingQueue = filteredOrders
+        .filter(o => o.status === 'PENDING')
+        .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    const queuePositionMap = {};
+    pendingQueue.forEach((o, idx) => { queuePositionMap[o.id] = idx + 1; });
+
+    const getAttentionOrders = () => {
+        const now = new Date();
+        return orders.filter(order => {
+            if (order.status !== 'PENDING') return false;
+            const createdDate = new Date(order.created_at);
+            const diffHours = (now - createdDate) / (1000 * 60 * 60);
+            return diffHours > 24;
+        });
+    };
+
+    const attentionOrders = getAttentionOrders();
+
     return (
         <div className="space-y-8 animate-fade-in">
             {/* KPI Section */}
@@ -262,16 +294,60 @@ export const SalesDashboard = ({
                 ))}
             </div>
 
-            {/* Actions Section */}
-            <div className="flex items-center justify-between">
+            {/* Actions & Filters Section */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <button
                     onClick={onAddOrder}
-                    className="flex items-center space-x-2 bg-[#1a73e8] text-white px-6 py-3 rounded-full font-medium text-sm hover:bg-[#1765cc] transition-all shadow-sm"
+                    className="flex items-center space-x-2 bg-[#1a73e8] text-white px-6 py-3 rounded-full font-medium text-sm hover:bg-[#1765cc] transition-all shadow-sm shrink-0"
                 >
                     <Plus size={18} />
                     <span>Nueva Orden de Venta</span>
                 </button>
+
+                <div className="flex flex-1 items-center space-x-3 max-w-2xl">
+                    <div className="relative flex-1">
+                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Buscar por producto o referencia..."
+                            value={productSearch}
+                            onChange={(e) => setProductSearch(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:border-primary-500 outline-none transition-all"
+                        />
+                    </div>
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:border-primary-500 outline-none transition-all cursor-pointer font-medium text-gray-700"
+                    >
+                        <option value="ALL">Todos los Estados</option>
+                        <option value="PENDING">Pendientes</option>
+                        <option value="COMPLETED">Completadas</option>
+                        <option value="CANCELLED">Canceladas</option>
+                    </select>
+                </div>
             </div>
+
+            {attentionOrders.length > 0 && (
+                <div className="bg-[#fce8e6] border border-[#f5c2c7] px-6 py-4 rounded-2xl flex items-center justify-between animate-pulse">
+                    <div className="flex items-center space-x-3 text-[#d93025]">
+                        <AlertTriangle size={20} />
+                        <div>
+                            <p className="text-sm font-bold">Atención Requerida</p>
+                            <p className="text-xs opacity-90">Hay {attentionOrders.length} pedidos pendientes con más de 24 horas sin atender.</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => {
+                            setStatusFilter('PENDING');
+                            setProductSearch('');
+                        }}
+                        className="text-xs font-bold uppercase tracking-wider text-[#d93025] hover:underline"
+                    >
+                        Ver Pedidos Críticos
+                    </button>
+                </div>
+            )}
 
             {/* Orders Table */}
             <div className="bg-white border border-[#dadce0] rounded-2xl overflow-hidden shadow-sm">
@@ -289,7 +365,7 @@ export const SalesDashboard = ({
                             <span>Exportar Excel</span>
                         </button>
                         <span className="bg-[#e8f0fe] text-[#1a73e8] px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
-                            {orders.length} TOTAL
+                            {filteredOrders.length} FILTRADOS / {orders.length} TOTAL
                         </span>
                     </div>
                 </div>
@@ -298,6 +374,7 @@ export const SalesDashboard = ({
                     <table className="google-table">
                         <thead>
                             <tr>
+                                <th>Cola</th>
                                 <th>Referencia</th>
                                 <th>Cliente</th>
                                 <th>Producto</th>
@@ -308,72 +385,96 @@ export const SalesDashboard = ({
                             </tr>
                         </thead>
                         <tbody>
-                            {orders.map((order) => (
-                                <tr key={order.id} className="hover:bg-[#f8f9fa] transition-colors">
-                                    <td>
-                                        <div className="flex flex-col">
-                                            <span className="font-medium text-[#202124]">OV-{order.id.substring(0, 6)}</span>
-                                            <span className="text-[11px] text-[#5f6368]">
-                                                {new Date(order.created_at).toLocaleDateString('es-CL')}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className="flex flex-col">
-                                            <span className="text-sm text-[#202124]">{order.customer_name}</span>
-                                            <span className="text-[11px] text-[#5f6368]">{order.customer_email}</span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className="flex flex-col">
-                                            <span className="text-sm text-[#202124]">{order.product_name}</span>
-                                            <span className="text-[11px] text-[#5f6368] font-medium">CANT: {order.quantity}</span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className="flex flex-col">
-                                            <span className="text-sm font-medium text-[#202124]">${parseFloat(order.total_amount).toLocaleString()}</span>
-                                            <span className="text-[10px] text-[#5f6368]">IGV: ${parseFloat(order.tax_amount).toLocaleString()}</span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className="flex flex-col">
-                                            <span className="text-sm text-[#202124]">{order.shipping_type}</span>
-                                            {order.delivery_date && (
-                                                <span className="text-[11px] text-[#5f6368]">
-                                                    {new Date(order.delivery_date).toLocaleDateString('es-CL')}
-                                                </span>
+                            {filteredOrders.map((order) => {
+                                const isCritical = attentionOrders.some(ao => ao.id === order.id);
+                                const queuePos = queuePositionMap[order.id];
+                                const isNextToDispatch = queuePos === 1;
+                                return (
+                                    <tr key={order.id} className={`hover:bg-[#f8f9fa] transition-colors ${isNextToDispatch ? 'bg-[#e8f0fe] border-l-4 border-l-[#1a73e8]' : ''} ${isCritical ? 'bg-red-50/10' : ''}`}>
+                                        <td>
+                                            {queuePos ? (
+                                                <div className="flex flex-col items-center">
+                                                    <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${isNextToDispatch ? 'bg-[#1a73e8] text-white' : 'bg-[#f1f3f4] text-[#5f6368]'}`}>
+                                                        {queuePos}
+                                                    </span>
+                                                    {isNextToDispatch && (
+                                                        <span className="text-[9px] font-bold text-[#1a73e8] mt-0.5 uppercase">Próximo</span>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <span className="text-[11px] text-[#5f6368]">—</span>
                                             )}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <StatusBadge status={order.status} />
-                                    </td>
-                                    <td className="text-right flex items-center justify-end space-x-2">
-                                        <button
-                                            onClick={() => onEditOrder(order)}
-                                            className="p-2 text-[#5f6368] hover:bg-[#f1f3f4] rounded-full transition-all"
-                                            title="Editar Orden"
-                                        >
-                                            <Pencil size={16} />
-                                        </button>
-                                        <button
-                                            onClick={() => onDeleteOrder(order.id)}
-                                            className="p-2 text-[#5f6368] hover:bg-[#ffebee] hover:text-[#d93025] rounded-full transition-all"
-                                            title="Eliminar Orden"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                        <button
-                                            onClick={() => generateTicketPDF(order)}
-                                            className="p-2 text-[#5f6368] hover:bg-[#f1f3f4] rounded-full transition-all"
-                                            title="Imprimir Ticket"
-                                        >
-                                            <Printer size={16} />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
+                                        </td>
+                                        <td>
+                                            <div className="flex flex-col">
+                                                <div className="flex items-center space-x-2">
+                                                    <span className="font-medium text-[#202124]">OV-{order.id.substring(0, 6)}</span>
+                                                    {isCritical && (
+                                                        <div className="w-2 h-2 rounded-full bg-red-500 animate-ping" title="Pedido Crítico (>24h)" />
+                                                    )}
+                                                </div>
+                                                <span className="text-[11px] text-[#5f6368]">
+                                                    {new Date(order.created_at).toLocaleDateString('es-CL')}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div className="flex flex-col">
+                                                <span className="text-sm text-[#202124]">{order.customer_name}</span>
+                                                <span className="text-[11px] text-[#5f6368]">{order.customer_email}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div className="flex flex-col">
+                                                <span className="text-sm text-[#202124]">{order.product_name}</span>
+                                                <span className="text-[11px] text-[#5f6368] font-medium">CANT: {order.quantity}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-medium text-[#202124]">${parseFloat(order.total_amount).toLocaleString()}</span>
+                                                <span className="text-[10px] text-[#5f6368]">IGV: ${parseFloat(order.tax_amount).toLocaleString()}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div className="flex flex-col">
+                                                <span className="text-sm text-[#202124]">{order.shipping_type}</span>
+                                                {order.delivery_date && (
+                                                    <span className="text-[11px] text-[#5f6368]">
+                                                        {new Date(order.delivery_date).toLocaleDateString('es-CL')}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <StatusBadge status={order.status} />
+                                        </td>
+                                        <td className="text-right flex items-center justify-end space-x-2">
+                                            <button
+                                                onClick={() => onEditOrder(order)}
+                                                className="p-2 text-[#5f6368] hover:bg-[#f1f3f4] rounded-full transition-all"
+                                                title="Editar Orden"
+                                            >
+                                                <Pencil size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => onDeleteOrder(order.id)}
+                                                className="p-2 text-[#5f6368] hover:bg-[#ffebee] hover:text-[#d93025] rounded-full transition-all"
+                                                title="Eliminar Orden"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => generateTicketPDF(order)}
+                                                className="p-2 text-[#5f6368] hover:bg-[#f1f3f4] rounded-full transition-all"
+                                                title="Imprimir Ticket"
+                                            >
+                                                <Printer size={16} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>

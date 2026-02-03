@@ -2,12 +2,18 @@ import React, { useState, useRef } from 'react';
 import { X, Package, AlertCircle, FileText, Upload, Plus } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
-export const ProductForm = ({ onSubmit, onClose, initialData }) => {
+export const ProductForm = ({ onSubmit, onClose, initialData, inline = false }) => {
     const isEdit = !!initialData;
     const [formData, setFormData] = useState({
         name: initialData?.name || '',
         description: initialData?.description || '',
-        sku: initialData?.sku || ''
+        sku: initialData?.sku || '',
+        retail_price: initialData?.retail_price || '',
+        stripe_price_id: initialData?.stripe_price_id || '',
+        is_preorder: initialData?.is_preorder || false,
+        preorder_price: initialData?.preorder_price || '',
+        estimated_delivery_date: initialData?.estimated_delivery_date ? new Date(initialData.estimated_delivery_date).toISOString().split('T')[0] : '',
+        preorder_description: initialData?.preorder_description || ''
     });
     const [imageFile, setImageFile] = useState(null);
     const [techSheetFile, setTechSheetFile] = useState(null);
@@ -50,33 +56,31 @@ export const ProductForm = ({ onSubmit, onClose, initialData }) => {
         }
     };
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#202124]/40 backdrop-blur-[2px] animate-fade-in">
-            <div className="w-full max-w-[560px] bg-white rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
-                {/* Header */}
-                <div className="px-8 py-6 flex items-center justify-between border-b border-[#dadce0]">
-                    <div className="flex items-center space-x-3">
-                        <div className="p-2.5 bg-[#e8f0fe] text-[#1a73e8] rounded-lg">
-                            <Package size={24} />
-                        </div>
-                        <div>
-                            <h3 className="text-xl font-medium text-[#202124]">
-                                {isEdit ? 'Editar Producto' : 'Registrar Nuevo Producto'}
-                            </h3>
-                            <p className="text-xs text-[#5f6368] mt-0.5 font-['Outfit']">
-                                {isEdit ? 'Actualiza los detalles técnicos' : 'El stock inicial será 0 por defecto'}
-                            </p>
-                        </div>
-                    </div>
-                    <button
-                        onClick={onClose}
-                        className="p-2 text-[#5f6368] hover:bg-[#f1f3f4] rounded-full transition-all"
-                    >
-                        <X size={20} />
-                    </button>
+    const headerContent = (
+        <div className="px-8 py-6 flex items-center justify-between border-b border-[#dadce0]">
+            <div className="flex items-center space-x-3">
+                <div className="p-2.5 bg-[#e8f0fe] text-[#1a73e8] rounded-lg">
+                    <Package size={24} />
                 </div>
+                <div>
+                    <h3 className="text-xl font-medium text-[#202124]">
+                        {isEdit ? 'Editar Producto' : 'Registrar Nuevo Producto'}
+                    </h3>
+                    <p className="text-xs text-[#5f6368] mt-0.5 font-['Outfit']">
+                        {isEdit ? 'Actualiza los detalles técnicos' : 'El stock inicial será 0 por defecto'}
+                    </p>
+                </div>
+            </div>
+            <button
+                onClick={onClose}
+                className="p-2 text-[#5f6368] hover:bg-[#f1f3f4] rounded-full transition-all"
+            >
+                <X size={20} />
+            </button>
+        </div>
+    );
 
-                {/* Form Body */}
+    const formBody = (
                 <form onSubmit={handleSubmit} className="p-8 space-y-6 overflow-y-auto max-h-[80vh]">
                     {error && (
                         <div className="bg-[#fce8e6] border border-[#f5c2c7] text-[#d93025] p-4 rounded-xl text-sm flex items-center space-x-3 animate-shake">
@@ -110,6 +114,30 @@ export const ProductForm = ({ onSubmit, onClose, initialData }) => {
                                         className="google-input uppercase font-mono"
                                         placeholder="SKU-001"
                                         required
+                                    />
+                                </div>
+
+                                <div className="space-y-1.5 font-['Outfit']">
+                                    <label className="text-[13px] font-medium text-[#202124] ml-1">Precio de Venta (S/)</label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={formData.retail_price}
+                                        onChange={(e) => setFormData({ ...formData, retail_price: e.target.value })}
+                                        className="google-input font-mono"
+                                        placeholder="0.00"
+                                    />
+                                </div>
+
+                                <div className="space-y-1.5 font-['Outfit']">
+                                    <label className="text-[13px] font-medium text-[#202124] ml-1">Stripe Price ID (Opcional)</label>
+                                    <input
+                                        type="text"
+                                        value={formData.stripe_price_id}
+                                        onChange={(e) => setFormData({ ...formData, stripe_price_id: e.target.value })}
+                                        className="google-input font-mono"
+                                        placeholder="price_..."
                                     />
                                 </div>
                             </div>
@@ -153,6 +181,65 @@ export const ProductForm = ({ onSubmit, onClose, initialData }) => {
                                 rows="3"
                                 required
                             />
+                        </div>
+
+                        {/* Pre-order Section */}
+                        <div className="space-y-4 pt-4 border-t border-[#dadce0]">
+                            <div className="flex items-center justify-between p-4 bg-[#fef7e0] rounded-xl border border-[#f9ab00]/20">
+                                <div className="flex items-center space-x-3">
+                                    <Package size={20} className={formData.is_preorder ? "text-[#f9ab00]" : "text-[#5f6368]"} />
+                                    <div>
+                                        <h4 className="text-sm font-medium text-[#202124]">Modo Preventa</h4>
+                                        <p className="text-[11px] text-[#5f6368]">Producto importado sin stock físico</p>
+                                    </div>
+                                </div>
+                                <input
+                                    type="checkbox"
+                                    checked={formData.is_preorder}
+                                    onChange={(e) => setFormData({ ...formData, is_preorder: e.target.checked })}
+                                    className="w-5 h-5 accent-[#f9ab00] cursor-pointer"
+                                />
+                            </div>
+
+                            {formData.is_preorder && (
+                                <div className="space-y-4 animate-fade-in">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-1.5 font-['Outfit']">
+                                            <label className="text-[13px] font-medium text-[#f9ab00] ml-1">Precio de Preventa (S/)</label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                min="0"
+                                                value={formData.preorder_price}
+                                                onChange={(e) => setFormData({ ...formData, preorder_price: e.target.value })}
+                                                className="google-input font-mono"
+                                                placeholder="0.00"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-1.5 font-['Outfit']">
+                                            <label className="text-[13px] font-medium text-[#f9ab00] ml-1">Fecha Estimada de Llegada</label>
+                                            <input
+                                                type="date"
+                                                value={formData.estimated_delivery_date}
+                                                onChange={(e) => setFormData({ ...formData, estimated_delivery_date: e.target.value })}
+                                                className="google-input"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1.5 font-['Outfit']">
+                                        <label className="text-[13px] font-medium text-[#f9ab00] ml-1">Descripción de Preventa</label>
+                                        <textarea
+                                            value={formData.preorder_description}
+                                            onChange={(e) => setFormData({ ...formData, preorder_description: e.target.value })}
+                                            className="google-input resize-none"
+                                            placeholder="Ej: Próximo arribo desde China - Marzo 2026"
+                                            rows="2"
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Tech Sheet Upload */}
@@ -219,6 +306,22 @@ export const ProductForm = ({ onSubmit, onClose, initialData }) => {
                         </button>
                     </div>
                 </form>
+    );
+
+    if (inline) {
+        return (
+            <div className="bg-white border border-[#dadce0] rounded-2xl overflow-hidden shadow-sm animate-fade-in">
+                {headerContent}
+                {formBody}
+            </div>
+        );
+    }
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#202124]/40 backdrop-blur-[2px] animate-fade-in">
+            <div className="w-full max-w-[560px] bg-white rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
+                {headerContent}
+                {formBody}
             </div>
         </div>
     );

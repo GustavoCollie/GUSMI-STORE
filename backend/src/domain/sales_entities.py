@@ -27,3 +27,4 @@ class SalesOrder:
     created_at: datetime = field(default_factory=get_local_time)
     
     product_name: Optional[str] = None
+    product_image: Optional[str] = None

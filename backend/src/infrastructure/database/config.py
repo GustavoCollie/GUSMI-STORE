@@ -16,6 +16,10 @@ DATABASE_URL = os.getenv(
     "postgresql://inventory_user:inventory_pass@localhost:5432/inventory_db"
 )
 
+# Fix for Supabase/Heroku which uses 'postgres://' but SQLAlchemy needs 'postgresql://'
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
 # Crear engine de SQLAlchemy
 engine_kwargs = {
     "pool_pre_ping": True,
@@ -23,6 +27,14 @@ engine_kwargs = {
 }
 
 if DATABASE_URL.startswith("sqlite"):
+    # Convert potential relative path to absolute to avoid ambiguity
+    if ":///" in DATABASE_URL:
+        db_path = DATABASE_URL.split(":///")[1]
+        if not os.path.isabs(db_path):
+            # Resolve relative to the backend directory
+            base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+            abs_db_path = os.path.join(base_dir, db_path)
+            DATABASE_URL = f"sqlite:///{abs_db_path}"
     engine_kwargs["connect_args"] = {"check_same_thread": False}
 else:
     engine_kwargs["pool_size"] = 10

@@ -7,12 +7,18 @@ from pydantic import BaseModel, Field, ConfigDict, field_validator, EmailStr
 
 class ProductCreateRequest(BaseModel):
     """Schema for product creation request."""
-    
+
     name: str = Field(..., min_length=1, max_length=200, description="Product name")
     description: str = Field(..., min_length=1, max_length=1000, description="Product description")
     sku: str = Field(..., min_length=1, max_length=50, description="Unique product SKU")
+    retail_price: Optional[Decimal] = Field(None, ge=0, description="Retail price for ecommerce")
     image_path: Optional[str] = None
     tech_sheet_path: Optional[str] = None
+    stripe_price_id: Optional[str] = None
+    is_preorder: bool = False
+    preorder_price: Optional[Decimal] = Field(None, ge=0, description="Special pre-order price")
+    estimated_delivery_date: Optional[datetime] = None
+    preorder_description: Optional[str] = None
     
     model_config = ConfigDict(
         json_schema_extra={
@@ -28,14 +34,20 @@ class ProductCreateRequest(BaseModel):
 
 class ProductResponse(BaseModel):
     """Schema for product response."""
-    
+
     id: UUID
     name: str
     description: str
     stock: int
     sku: str
+    retail_price: Optional[Decimal] = None
     image_path: Optional[str] = None
     tech_sheet_path: Optional[str] = None
+    stripe_price_id: Optional[str] = None
+    is_preorder: bool = False
+    preorder_price: Optional[Decimal] = None
+    estimated_delivery_date: Optional[datetime] = None
+    preorder_description: Optional[str] = None
     updated_at: datetime
     
     model_config = ConfigDict(from_attributes=True)
@@ -86,13 +98,19 @@ class MovementResponse(BaseModel):
 
 class ProductUpdateRequest(BaseModel):
     """Schema for partial product update (PATCH)."""
-    
+
     name: Optional[str] = Field(None, min_length=1, max_length=200)
     description: Optional[str] = Field(None, min_length=1, max_length=1000)
     sku: Optional[str] = Field(None, min_length=1, max_length=50)
+    retail_price: Optional[Decimal] = Field(None, ge=0)
     # Trazabilidad inicial
     initial_reference: Optional[str] = None
     initial_document_path: Optional[str] = None
+    stripe_price_id: Optional[str] = None
+    is_preorder: Optional[bool] = None
+    preorder_price: Optional[Decimal] = Field(None, ge=0)
+    estimated_delivery_date: Optional[datetime] = None
+    preorder_description: Optional[str] = None
 
 class PendingReturnResponse(BaseModel):
     """Schema for a pending return."""

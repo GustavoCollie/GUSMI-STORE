@@ -68,6 +68,19 @@ export const usePurchasing = () => {
         return res.data;
     };
 
+    const deleteOrder = async (id) => {
+        await purchasingService.deleteOrder(id);
+        setOrders(prev => prev.filter(o => o.id !== id));
+        fetchData();
+    };
+
+    const updateOrderDetails = async (id, data) => {
+        const res = await purchasingService.updateOrderDetails(id, data);
+        setOrders(prev => prev.map(o => o.id === id ? res.data : o));
+        fetchData();
+        return res.data;
+    };
+
     useEffect(() => {
         fetchData();
     }, []);
@@ -83,6 +96,8 @@ export const usePurchasing = () => {
         updateSupplier,
         deleteSupplier,
         createOrder,
-        updateOrder
+        updateOrder,
+        deleteOrder,
+        updateOrderDetails
     };
 };

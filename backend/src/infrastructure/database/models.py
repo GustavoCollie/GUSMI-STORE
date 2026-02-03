@@ -38,8 +38,14 @@ class ProductModel(Base):
     description = Column(String(1000), nullable=False)
     stock = Column(Integer, nullable=False, default=0)
     sku = Column(String(50), unique=True, nullable=False)
+    retail_price = Column(Numeric(10, 2), nullable=True)
     image_path = Column(String(500), nullable=True)
     tech_sheet_path = Column(String(500), nullable=True)
+    stripe_price_id = Column(String(100), nullable=True)
+    is_preorder = Column(Boolean, default=False, nullable=False)
+    preorder_price = Column(Numeric(10, 2), nullable=True)
+    estimated_delivery_date = Column(DateTime, nullable=True)
+    preorder_description = Column(String(500), nullable=True)
     updated_at = Column(DateTime, default=get_local_time, onupdate=get_local_time)
     
     # Cascade delete movements when product is deleted
@@ -158,6 +164,25 @@ class PurchaseOrderModel(Base):
 
     def __repr__(self):
         return f"<PurchaseOrderModel(id={self.id}, status={self.status})>"
+
+
+class CustomerModel(Base):
+    """Modelo para clientes del ecommerce (separado de usuarios admin)."""
+    __tablename__ = "customers"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    hashed_password = Column(String(255), nullable=True)  # nullable for Google-only users
+    full_name = Column(String(200), nullable=True)
+    phone = Column(String(50), nullable=True)
+    google_id = Column(String(255), unique=True, nullable=True)
+    auth_provider = Column(String(20), default="email")  # "email" or "google"
+    has_discount = Column(Boolean, default=True)  # 2% discount for registered customers
+    is_verified = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=get_local_time)
+
+    def __repr__(self):
+        return f"<CustomerModel(email={self.email})>"
 
 
 class SalesOrderModel(Base):

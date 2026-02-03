@@ -40,6 +40,12 @@ class PostgresSalesRepository(SalesRepository):
         models = self.session.query(SalesOrderModel).all()
         return [self._to_entity(m) for m in models]
 
+    def find_by_email(self, email: str) -> List[SalesOrder]:
+        models = self.session.query(SalesOrderModel).filter(
+            SalesOrderModel.customer_email == email
+        ).order_by(SalesOrderModel.created_at.desc()).all()
+        return [self._to_entity(m) for m in models]
+
     def update_status(self, order_id: UUID, status: str) -> None:
         model = self.session.query(SalesOrderModel).filter(SalesOrderModel.id == str(order_id)).first()
         if model:
@@ -119,5 +125,6 @@ class PostgresSalesRepository(SalesRepository):
             delivery_date=m.delivery_date,
             status=m.status,
             created_at=m.created_at,
-            product_name=m.product.name if m.product else None
+            product_name=m.product.name if m.product else None,
+            product_image=m.product.image_path if m.product else None
         )

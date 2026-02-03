@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Plus, Search, LogOut, Github, TrendingUp, AlertCircle, History, LayoutDashboard, ShoppingBag, ShoppingCart, BarChart2 } from 'lucide-react';
+import { Package, Plus, Search, LogOut, Github, TrendingUp, AlertCircle, History, LayoutDashboard, ShoppingBag, ShoppingCart, BarChart2, Users } from 'lucide-react';
 import { useProducts } from './hooks/useProducts';
 import { DashboardStats } from './components/Dashboard/DashboardStats';
 import { ProductTable } from './components/Dashboard/ProductTable';
@@ -13,6 +13,7 @@ import { usePurchasing } from './hooks/usePurchasing';
 import { PurchasingDashboard } from './components/Dashboard/PurchasingDashboard';
 import { PurchaseOrderForm } from './components/Forms/PurchaseOrderForm';
 import { SupplierForm } from './components/Forms/SupplierForm';
+import { SupplierTable } from './components/Dashboard/SupplierTable';
 import { useSales } from './hooks/useSales';
 import { SalesDashboard } from './components/Dashboard/SalesDashboard';
 import { SalesOrderForm } from './components/Forms/SalesOrderForm';
@@ -55,7 +56,9 @@ function App() {
     updateSupplier,
     deleteSupplier,
     createOrder: createPurchaseOrder,
-    updateOrder: updatePurchaseOrder
+    updateOrder: updatePurchaseOrder,
+    deleteOrder: deletePurchaseOrder,
+    updateOrderDetails: updatePurchaseOrderDetails
   } = usePurchasing();
 
   const {
@@ -76,6 +79,8 @@ function App() {
   const [showSalesOrderForm, setShowSalesOrderForm] = useState(false);
   const [editingSalesOrder, setEditingSalesOrder] = useState(null);
   const [showSupplierForm, setShowSupplierForm] = useState(false);
+  const [editingSupplier, setEditingSupplier] = useState(null);
+  const [editingPurchaseOrder, setEditingPurchaseOrder] = useState(null);
 
   // Modals state
   const [productToSell, setProductToSell] = useState(null);
@@ -235,10 +240,11 @@ function App() {
         {/* Navigation Tabs - Google Style */}
         <div className="flex items-center space-x-1 border-b border-[#dadce0] mb-8">
           {[
-            { id: 'purchasing', label: 'Compras', icon: ShoppingBag },
+            { id: 'inventory', label: 'Registrar Artículo', icon: Plus },
+            { id: 'suppliers', label: 'Gestionar Proveedores', icon: Users },
+            { id: 'purchasing', label: 'Nueva OC', icon: ShoppingBag },
             { id: 'sales', label: 'Ventas', icon: ShoppingCart },
             { id: 'business', label: 'Negocio', icon: BarChart2 },
-            { id: 'inventory', label: 'Inventario', icon: Package },
             { id: 'movements', label: 'Movimientos', icon: History }
           ].map((tab) => (
             <button
@@ -258,22 +264,128 @@ function App() {
           ))}
         </div>
 
+        {activeTab === 'inventory' && (
+          <div className="space-y-8 animate-fade-in">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-medium text-[#202124]">Catálogo de Productos</h2>
+                <p className="text-sm text-[#5f6368] mt-1">Gestiona las existencias y detalles técnicos de tu almacén</p>
+              </div>
+              <button
+                onClick={() => {
+                  setEditingProduct(null);
+                  setShowForm(true);
+                }}
+                className="bg-[#1a73e8] text-white px-6 py-2.5 rounded-full font-medium text-sm hover:bg-[#1765cc] transition-all shadow-sm active:scale-95 flex items-center space-x-2 font-['Outfit']"
+              >
+                <Plus size={18} />
+                <span>Nuevo Producto</span>
+              </button>
+            </div>
+
+            {/* Stats Summary */}
+            <DashboardStats products={products} movements={movements} />
+
+            {error ? (
+              <div className="bg-[#fce8e6] border border-[#f5c2c7] text-[#d93025] p-6 rounded-2xl flex items-center space-x-4">
+                <AlertCircle size={24} />
+                <div>
+                  <p className="font-bold">Error al cargar inventario</p>
+                  <p className="text-sm opacity-90">{error}</p>
+                </div>
+                <button
+                  onClick={refresh}
+                  className="ml-auto bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-xs font-bold uppercase transition-colors"
+                >
+                  Reintentar
+                </button>
+              </div>
+            ) : (
+              <div className="bg-white border border-[#dadce0] rounded-2xl overflow-hidden shadow-sm">
+                <ProductTable
+                  products={filteredProducts}
+                  purchaseOrders={purchaseOrders}
+                  loading={loading}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onReturn={(p) => setProductToReplenish(p)}
+                  onSell={(p) => setProductToSell(p)}
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'suppliers' && (
+          <div className="space-y-6 animate-fade-in">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-medium text-[#202124]">Gestión de Proveedores</h2>
+                <p className="text-sm text-[#5f6368] mt-1">Directorio central de socios comerciales y abastecimiento</p>
+              </div>
+              <button
+                onClick={() => {
+                  setEditingSupplier(null);
+                  setShowSupplierForm(true);
+                }}
+                className="bg-[#1a73e8] text-white px-6 py-2.5 rounded-full font-medium text-sm hover:bg-[#1765cc] transition-all shadow-sm active:scale-95 flex items-center space-x-2"
+              >
+                <Plus size={18} />
+                <span>Nuevo Proveedor</span>
+              </button>
+            </div>
+            <SupplierTable
+              suppliers={suppliers}
+              loading={purchasingLoading}
+              onEdit={(s) => {
+                setEditingSupplier(s);
+                setShowSupplierForm(true);
+              }}
+              onDelete={deleteSupplier}
+            />
+          </div>
+        )}
+
         {activeTab === 'purchasing' && (
-          <div className="animate-fade-in">
+          <div className="space-y-6 animate-fade-in">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-medium text-[#202124]">Gestión de Compras</h2>
+                <p className="text-sm text-[#5f6368] mt-1">Órdenes de compra, recepciones y KPIs de abastecimiento</p>
+              </div>
+              <button
+                onClick={() => {
+                  setEditingPurchaseOrder(null);
+                  setShowOrderForm(true);
+                }}
+                className="bg-[#1a73e8] text-white px-6 py-2.5 rounded-full font-medium text-sm hover:bg-[#1765cc] transition-all shadow-sm active:scale-95 flex items-center space-x-2 font-['Outfit']"
+              >
+                <Plus size={18} />
+                <span>Nueva Orden de Compra</span>
+              </button>
+            </div>
+
             <PurchasingDashboard
+              showActions={false}
               suppliers={suppliers}
               orders={purchaseOrders}
               kpis={purchaseKpis}
               loading={purchasingLoading}
               error={purchasingError}
-              onAddSupplier={() => setShowSupplierForm(true)}
+              onAddSupplier={() => setActiveTab('suppliers')}
               onUpdateSupplier={updateSupplier}
               onDeleteSupplier={deleteSupplier}
-              onAddOrder={() => setShowOrderForm(true)}
-              onAddProduct={() => {
-                setEditingProduct(null);
-                setShowForm(true);
+              onEditOrder={(order) => {
+                setEditingPurchaseOrder(order);
+                setShowOrderForm(true);
               }}
+              onDeleteOrder={async (id) => {
+                if (window.confirm('¿Seguro que deseas eliminar esta orden de compra?')) {
+                  await deletePurchaseOrder(id);
+                }
+              }}
+              onAddOrder={() => setShowOrderForm(true)}
+              onAddProduct={() => setActiveTab('inventory')}
               onUpdateOrderStatus={async (id, data) => {
                 if (data instanceof FormData) {
                   await updatePurchaseOrder(id, data);
@@ -294,7 +406,13 @@ function App() {
           </div>
         )}
         {activeTab === 'sales' && (
-          <div className="animate-fade-in">
+          <div className="space-y-6 animate-fade-in">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-medium text-[#202124]">Historial de Movimientos</h2>
+                <p className="text-sm text-[#5f6368] mt-1">Trazabilidad completa de entradas y salidas de almacén</p>
+              </div>
+            </div>
             <SalesDashboard
               orders={salesOrders}
               kpis={salesKpis}
@@ -308,46 +426,6 @@ function App() {
         )}
         {activeTab === 'business' && (
           <AnalyticsDashboard />
-        )}
-        {activeTab === 'inventory' && (
-          <div className="space-y-8 animate-fade-in">
-            {/* Stats Summary */}
-            <DashboardStats products={products} movements={movements} />
-
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-medium text-[#202124]">Catálogo de Productos</h2>
-                <p className="text-sm text-[#5f6368] mt-1">Gestiona las existencias y detalles técnicos de tu almacén</p>
-              </div>
-            </div>
-
-            {error ? (
-              <div className="bg-[#fce8e6] border border-[#f5c2c7] text-[#d93025] p-6 rounded-2xl flex items-center space-x-4">
-                <AlertCircle size={24} />
-                <div>
-                  <p className="font-bold">Error al cargar inventario</p>
-                  <p className="text-sm opacity-90">{error}</p>
-                </div>
-                <button
-                  onClick={refresh}
-                  className="ml-auto bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-xs font-bold uppercase transition-colors"
-                >
-                  Reintentar
-                </button>
-              </div>
-            ) : (
-              <div className="bg-white border border-[#dadce0] rounded-2xl overflow-hidden shadow-sm">
-                <ProductTable
-                  products={filteredProducts}
-                  loading={loading}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onReturn={(p) => setProductToReplenish(p)}
-                  onSell={(p) => setProductToSell(p)}
-                />
-              </div>
-            )}
-          </div>
         )}
         {activeTab === 'movements' && (
           <div className="space-y-6 animate-fade-in">
@@ -417,29 +495,41 @@ function App() {
           suppliers={suppliers}
           products={products}
           loading={purchasingLoading}
-          onClose={() => setShowOrderForm(false)}
-          onSubmit={async (data) => {
-            await createPurchaseOrder(data);
+          initialData={editingPurchaseOrder}
+          onClose={() => {
             setShowOrderForm(false);
+            setEditingPurchaseOrder(null);
+          }}
+          onSubmit={async (data) => {
+            if (editingPurchaseOrder) {
+              await updatePurchaseOrderDetails(editingPurchaseOrder.id, data);
+            } else {
+              await createPurchaseOrder(data);
+            }
+            setShowOrderForm(false);
+            setEditingPurchaseOrder(null);
           }}
         />
       )}
 
       {showSupplierForm && (
         <SupplierForm
-          suppliers={suppliers}
+          initialData={editingSupplier}
           products={products}
           loading={purchasingLoading}
-          onClose={() => setShowSupplierForm(false)}
+          onClose={() => {
+            setShowSupplierForm(false);
+            setEditingSupplier(null);
+          }}
           onSubmit={async (data) => {
-            await createSupplier(data);
+            if (editingSupplier) {
+              await updateSupplier(editingSupplier.id, data);
+            } else {
+              await createSupplier(data);
+            }
             setShowSupplierForm(false);
+            setEditingSupplier(null);
           }}
-          onUpdate={async (id, data) => {
-            await updateSupplier(id, data);
-            setShowSupplierForm(false);
-          }}
-          onDelete={deleteSupplier}
         />
       )}
 

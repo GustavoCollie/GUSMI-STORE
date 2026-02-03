@@ -153,8 +153,28 @@ class PostgresPurchaseRepository(PurchaseRepository):
             model.referral_guide_path = order.referral_guide_path
             model.supplier_id = str(order.supplier_id)
             model.product_id = str(order.product_id)
+            # Add general fields for editing
+            model.quantity = order.quantity
+            model.unit_price = order.unit_price
+            model.total_amount = order.total_amount
+            model.tax_amount = order.tax_amount
+            model.currency = order.currency
+            model.savings_amount = order.savings_amount
+            model.freight_amount = order.freight_amount
+            model.other_expenses_amount = order.other_expenses_amount
+            model.other_expenses_description = order.other_expenses_description
+            model.expected_delivery_date = order.expected_delivery_date
+            
             self.session.commit()
         return order
+
+    def delete_purchase_order(self, order_id: UUID) -> bool:
+        model = self.session.query(PurchaseOrderModel).filter(PurchaseOrderModel.id == str(order_id)).first()
+        if model:
+            self.session.delete(model)
+            self.session.commit()
+            return True
+        return False
 
     def link_product_to_supplier(self, supplier_id: UUID, product_id: UUID) -> bool:
         supplier = self.session.query(SupplierModel).filter(SupplierModel.id == str(supplier_id)).first()

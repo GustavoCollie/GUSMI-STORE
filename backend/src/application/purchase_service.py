@@ -231,6 +231,33 @@ class PurchaseService:
         updated_order = self.repo.update_purchase_order(order)
         return updated_order
 
+    def update_purchase_order(self, order_id: UUID, **kwargs) -> Optional[PurchaseOrder]:
+        """Provides a general editing for pending orders"""
+        order = self.repo.get_purchase_order(order_id)
+        if not order:
+            return None
+        
+        # Only allow significant changes if it's PENDING
+        if order.status != "PENDING":
+             # Optional: restricted update for non-pending orders (e.g. only description)
+             # For now let's keep it simple or allow all if requested
+             pass
+
+        for key, value in kwargs.items():
+            if hasattr(order, key) and value is not None:
+                setattr(order, key, value)
+        
+        # Recalculate totals if quantity, price or fees changed
+        subtotal = Decimal(order.quantity) * order.unit_price
+        tax_rate = Decimal("0.18")
+        order.tax_amount = subtotal * tax_rate
+        order.total_amount = subtotal + order.tax_amount + order.freight_amount + order.other_expenses_amount - order.savings_amount
+
+        return self.repo.update_purchase_order(order)
+
+    def delete_purchase_order(self, order_id: UUID) -> bool:
+        return self.repo.delete_purchase_order(order_id)
+
     def calculate_kpis(self) -> PurchaseKPIs:
         orders = self.repo.get_purchase_orders()
         total_orders = len(orders)

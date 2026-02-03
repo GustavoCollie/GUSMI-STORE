@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: 'http://localhost:8000/api/v1',
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1',
     headers: {
         'Content-Type': 'application/json',
         'X-API-Key': 'dev-secret-key',
@@ -87,6 +87,8 @@ export const purchasingService = {
     getKPIs: () => api.get('/purchasing/kpis'),
     updateSupplier: (id, data) => api.patch(`/purchasing/suppliers/${id}`, data),
     deleteSupplier: (id) => api.delete(`/purchasing/suppliers/${id}`),
+    deleteOrder: (id) => api.delete(`/purchasing/orders/${id}`),
+    updateOrderDetails: (id, data) => api.patch(`/purchasing/orders/${id}/detail`, data),
 };
 
 export const salesService = {

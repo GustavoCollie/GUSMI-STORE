@@ -43,3 +43,7 @@ class PurchaseRepository(ABC):
     @abstractmethod
     def update_purchase_order(self, order: PurchaseOrder) -> PurchaseOrder:
         pass
+
+    @abstractmethod
+    def delete_purchase_order(self, order_id: UUID) -> bool:
+        pass

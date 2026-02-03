@@ -141,16 +141,24 @@ export const SellProductModal = ({ product, salesOrders = [], onClose, onConfirm
 
                     {exitType === 'sale' ? (
                         <div className="space-y-6 animate-fade-in">
+                            <div className="bg-[#e8f0fe] border border-[#1a73e8]/10 rounded-xl p-4 flex items-start space-x-3">
+                                <Tag className="text-[#1a73e8] mt-0.5" size={18} />
+                                <div>
+                                    <p className="text-[13px] font-medium text-[#1a73e8]">Conectar con Orden de Venta</p>
+                                    <p className="text-[11px] text-[#5f6368] mt-0.5">Selecciona una orden de venta pendiente para automatizar los datos de salida.</p>
+                                </div>
+                            </div>
+
                             <div className="space-y-1.5 font-['Outfit']">
-                                <label className="text-[13px] font-medium text-[#202124] ml-1">Seleccionar Orden de Venta</label>
+                                <label className="text-[13px] font-medium text-[#202124] ml-1 uppercase tracking-wider text-[10px]">Órdenes Disponibles</label>
                                 <div className="relative group">
-                                    <Tag className="absolute left-3 top-2.5 text-[#5f6368] group-focus-within:text-[#1a73e8]" size={18} />
+                                    <ShoppingCart className="absolute left-3 top-2.5 text-[#5f6368] group-focus-within:text-[#1a73e8]" size={18} />
                                     <select
                                         value={selectedSalesOrderId}
                                         onChange={(e) => {
                                             const val = e.target.value;
                                             setSelectedSalesOrderId(val);
-                                            const order = salesOrders.find(o => o.id === val);
+                                            const order = salesOrders.find(o => o.id.toString() === val.toString());
                                             if (order) {
                                                 setQuantity(order.quantity);
                                                 setRecipientEmail(order.customer_email);
@@ -159,14 +167,25 @@ export const SellProductModal = ({ product, salesOrders = [], onClose, onConfirm
                                                 }
                                             }
                                         }}
-                                        className="google-input google-input-icon appearance-none"
+                                        className="google-input google-input-icon appearance-none bg-white"
                                     >
-                                        <option value="">Buscar orden pendiente...</option>
-                                        {salesOrders.filter(o => o.product_id === product.id && o.status === 'PENDING').map(o => (
-                                            <option key={o.id} value={o.id}>OV-{o.id.substring(0, 8)} | {o.customer_name} ({o.quantity} uds)</option>
-                                        ))}
+                                        <option value="">-- Buscar orden pendiente --</option>
+                                        {salesOrders
+                                            .filter(o => o.product_id?.toString() === product.id?.toString() && o.status === 'PENDING')
+                                            .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+                                            .map((o, idx) => (
+                                                <option key={o.id} value={o.id}>
+                                                    #{idx + 1} OV-{o.id.toString().substring(0, 8)} | {o.customer_name} ({o.quantity} uds)
+                                                </option>
+                                            ))}
                                     </select>
                                 </div>
+                                {salesOrders.filter(o => o.product_id?.toString() === product.id?.toString() && o.status === 'PENDING').length === 0 && (
+                                    <p className="text-[10px] text-[#b06000] font-medium ml-1 mt-1 flex items-center">
+                                        <AlertTriangle size={10} className="mr-1" />
+                                        No hay órdenes de venta pendientes para este producto.
+                                    </p>
+                                )}
                             </div>
 
                             {selectedSalesOrderId && (
@@ -179,7 +198,7 @@ export const SellProductModal = ({ product, salesOrders = [], onClose, onConfirm
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
                                             <p className="text-[10px] font-bold text-[#5f6368] uppercase">Cliente</p>
-                                            <p className="text-sm font-medium text-[#202124]">{salesOrders.find(o => o.id === selectedSalesOrderId)?.customer_name}</p>
+                                            <p className="text-sm font-medium text-[#202124]">{salesOrders.find(o => o.id.toString() === selectedSalesOrderId.toString())?.customer_name}</p>
                                         </div>
                                         <div>
                                             <p className="text-[10px] font-bold text-[#5f6368] uppercase">Cantidad</p>
@@ -187,7 +206,7 @@ export const SellProductModal = ({ product, salesOrders = [], onClose, onConfirm
                                         </div>
                                         <div>
                                             <p className="text-[10px] font-bold text-[#5f6368] uppercase">Tipo de Entrega</p>
-                                            <p className="text-sm font-medium text-[#202124]">{salesOrders.find(o => o.id === selectedSalesOrderId)?.shipping_type === 'DELIVERY' ? 'A Domicilio' : 'Retiro en Local'}</p>
+                                            <p className="text-sm font-medium text-[#202124]">{salesOrders.find(o => o.id.toString() === selectedSalesOrderId.toString())?.shipping_type === 'DELIVERY' ? 'A Domicilio' : 'Retiro en Local'}</p>
                                         </div>
                                         <div>
                                             <p className="text-[10px] font-bold text-[#5f6368] uppercase">Correo</p>
@@ -363,7 +382,7 @@ export const SellProductModal = ({ product, salesOrders = [], onClose, onConfirm
                         </button>
                     </div>
                 </form>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };

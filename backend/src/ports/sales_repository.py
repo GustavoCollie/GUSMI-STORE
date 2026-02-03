@@ -17,6 +17,10 @@ class SalesRepository(ABC):
         pass
 
     @abstractmethod
+    def find_by_email(self, email: str) -> List[SalesOrder]:
+        pass
+
+    @abstractmethod
     def update_status(self, order_id: UUID, status: str) -> None:
         pass
 

@@ -3,8 +3,9 @@ Dependency Injection para FastAPI.
 """
 import os
 from typing import Generator, Any
-from fastapi import Depends
+from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
+from src.infrastructure.database.models import CustomerModel
 
 from src.application.services import InventoryService
 from src.infrastructure.database.config import SessionLocal
@@ -82,3 +83,41 @@ def get_auth_service(
         token_provider=JWTTokenProvider(),
         email_service=SMTPEmailService()
     )
+
+
+# --- Public Ecommerce Dependencies ---
+from src.infrastructure.repositories.postgres_customer_repository import PostgresCustomerRepository
+from src.application.customer_auth_service import CustomerAuthService
+from src.application.stripe_service import StripeService
+from src.application.ecommerce_service import EcommerceService
+
+
+def get_customer_auth_service(
+    db: Session = Depends(get_db),
+) -> CustomerAuthService:
+    repo = PostgresCustomerRepository(db)
+    return CustomerAuthService(customer_repository=repo)
+
+
+def get_ecommerce_service(
+    repository: ProductRepository = Depends(get_repository),
+    sales_repository: SalesRepository = Depends(get_sales_repository),
+) -> EcommerceService:
+    return EcommerceService(
+        product_repository=repository,
+        sales_repository=sales_repository,
+        stripe_service=StripeService(),
+    )
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import Header
+
+security = HTTPBearer()
+
+def get_current_customer(
+    auth_credentials: HTTPAuthorizationCredentials = Depends(security),
+    auth_service: CustomerAuthService = Depends(get_customer_auth_service),
+) -> CustomerModel:
+    customer = auth_service.get_customer_from_token(auth_credentials.credentials)
+    if not customer:
+        raise HTTPException(status_code=401, detail="Token inválido o expirado")
+    return customer
