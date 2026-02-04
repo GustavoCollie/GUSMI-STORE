@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Upload, FileText, User, Users, Clock, AlertCircle, ShoppingCart, Tag, Mail, Calendar } from 'lucide-react';
+import { X, Upload, FileText, User, Users, Clock, AlertCircle, ShoppingCart, Tag, Mail, Calendar, AlertTriangle } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
 export const SellProductModal = ({ product, salesOrders = [], onClose, onConfirm, loading }) => {
