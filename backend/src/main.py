@@ -58,11 +58,45 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Collie Almacenes",
-    description="Inventory REST API",
+    title="Collie Valley Inventory Management API",
+    description="""
+    ## Comprehensive Inventory Management System
+    
+    This API provides complete inventory management capabilities including:
+    
+    * **Product Management**: CRUD operations for products with stock tracking
+    * **Purchase Orders**: Supplier management and purchase order processing
+    * **Sales Orders**: Customer orders and sales tracking
+    * **Analytics**: Business intelligence and reporting
+    * **Authentication**: Secure user and customer authentication
+    
+    ### Architecture
+    Built with hexagonal architecture following SOLID principles.
+    
+    ### Authentication
+    Most endpoints require authentication via JWT tokens or API keys.
+    """,
     version="1.0.0",
+    contact={
+        "name": "Collie Valley Support",
+        "email": "support@collievalley.com",
+    },
     lifespan=lifespan
 )
+
+# Request logging middleware
+from fastapi import Request
+import time
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = time.time() - start_time
+    logger.info(
+        f"{request.method} {request.url.path} - Status: {response.status_code} - Time: {process_time:.3f}s"
+    )
+    return response
 
 app.add_middleware(
     CORSMiddleware,
