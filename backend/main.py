@@ -17,12 +17,12 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
-from src.infrastructure.api.limiter import limiter
+# from .infrastructure.api.limiter import limiter
 
-from src.infrastructure.api.routes import router as products_router
-from src.infrastructure.api.auth_routes import router as auth_router
-from src.infrastructure.api.purchase_routes import router as purchase_router
-from src.infrastructure.api.sales_routes import router as sales_router
+# from src.infrastructure.api.routes import router as products_router
+# from src.infrastructure.api.auth_routes import router as auth_router
+# from src.infrastructure.api.purchase_routes import router as purchase_router
+# from src.infrastructure.api.sales_routes import router as sales_router
 
 # Configure logging
 logging.basicConfig(
@@ -58,7 +58,8 @@ async def lifespan(app: FastAPI):
         if missing:
             error_msg = f"Missing required environment variables: {', '.join(missing)}"
             logger.error(error_msg)
-            raise RuntimeError(error_msg)
+            if not os.getenv("VERCEL"):
+                raise RuntimeError(error_msg)
         
         repo_type = os.getenv('REPOSITORY_TYPE', 'memory')
         logger.info(f"Repository mode: {repo_type}")
@@ -71,15 +72,20 @@ async def lifespan(app: FastAPI):
             logger.info("Database initialized successfully")
         except Exception as e:
             logger.error(f"Failed to initialize database: {e}", exc_info=True)
-            raise
+            if not os.getenv("VERCEL"):
+                raise
+            # On Vercel, allow startup even if DB fails, so we can see the logs/health check
 
-        # Start scheduler
-        try:
-            from src.infrastructure.services.scheduler_service import scheduler_service
-            scheduler_service.start()
-            logger.info("Scheduler started")
-        except Exception as e:
-            logger.warning(f"Failed to start scheduler (non-critical): {e}")
+        # Start scheduler (SKIP on Vercel to prevent thread issues)
+        if not os.getenv("VERCEL"):
+            try:
+                from src.infrastructure.services.scheduler_service import scheduler_service
+                scheduler_service.start()
+                logger.info("Scheduler started")
+            except Exception as e:
+                logger.warning(f"Failed to start scheduler (non-critical): {e}")
+        else:
+            logger.info("Skipping Scheduler startup on Vercel Environment.")
         
         logger.info("Startup sequence completed")
         yield
@@ -125,9 +131,9 @@ app = FastAPI(
     },
     lifespan=lifespan
 )
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-app.add_middleware(SlowAPIMiddleware)
+# app.state.limiter = limiter
+# app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+# app.add_middleware(SlowAPIMiddleware)
 
 # Request logging middleware
 from fastapi import Request
@@ -156,14 +162,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(products_router, prefix="/api/v1/products")
-app.include_router(auth_router, prefix="/api/v1/auth")
-app.include_router(purchase_router, prefix="/api/v1/purchasing")
-app.include_router(sales_router, prefix="/api/v1/sales")
+# app.include_router(products_router, prefix="/api/v1/products")
+# app.include_router(auth_router, prefix="/api/v1/auth")
+# app.include_router(purchase_router, prefix="/api/v1/purchasing")
+# app.include_router(sales_router, prefix="/api/v1/sales")
 from src.infrastructure.api.analytics_routes import router as analytics_router
-app.include_router(analytics_router, prefix="/api/v1/analytics")
+# app.include_router(analytics_router, prefix="/api/v1/analytics")
 from src.infrastructure.api.public_routes import router as public_router
-app.include_router(public_router, prefix="/api/v1/public")
+# app.include_router(public_router, prefix="/api/v1/public")
 
 # Servir archivos estáticos para documentos subidos
 if not os.getenv("VERCEL"):
