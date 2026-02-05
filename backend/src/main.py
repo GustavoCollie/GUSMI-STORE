@@ -49,32 +49,54 @@ async def lifespan(app: FastAPI):
     Application lifespan manager.
     Handles startup and shutdown events.
     """
-    # Validate critical environment variables
-    required_vars = ["DATABASE_URL", "SECRET_KEY", "API_KEY"]
-    missing = [var for var in required_vars if not os.getenv(var)]
-    if missing:
-        raise RuntimeError(
-            f"Missing required environment variables: {', '.join(missing)}. "
-            f"Please configure these in your .env file."
-        )
-    
-    repo_type = os.getenv('REPOSITORY_TYPE', 'memory')
-    logger.info(f"Starting application. Repository mode: {repo_type}")
-    
-    # Initialize database
-    from src.infrastructure.database.config import init_db
-    init_db()
-    logger.info("Database initialized (tables created/verified)")
+    try:
+        logger.info("Starting startup sequence...")
+        
+        # Validate critical environment variables
+        required_vars = ["DATABASE_URL", "SECRET_KEY", "API_KEY"]
+        missing = [var for var in required_vars if not os.getenv(var)]
+        if missing:
+            error_msg = f"Missing required environment variables: {', '.join(missing)}"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
+        
+        repo_type = os.getenv('REPOSITORY_TYPE', 'memory')
+        logger.info(f"Repository mode: {repo_type}")
+        
+        # Initialize database
+        try:
+            from src.infrastructure.database.config import init_db
+            logger.info("Initializing database connection...")
+            init_db()
+            logger.info("Database initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize database: {e}", exc_info=True)
+            raise
 
-    # Start scheduler
-    from src.infrastructure.services.scheduler_service import scheduler_service
-    scheduler_service.start()
-    
-    yield
-    
-    # Shutdown scheduler
-    scheduler_service.shutdown()
-    logger.info("Shutting down application...")
+        # Start scheduler
+        try:
+            from src.infrastructure.services.scheduler_service import scheduler_service
+            scheduler_service.start()
+            logger.info("Scheduler started")
+        except Exception as e:
+            logger.warning(f"Failed to start scheduler (non-critical): {e}")
+        
+        logger.info("Startup sequence completed")
+        yield
+        
+    except Exception as e:
+        logger.critical(f"FATAL: Application startup failed: {e}", exc_info=True)
+        # Re-raise to let Vercel handle the crash
+        raise
+    finally:
+        # Shutdown scheduler
+        try:
+            from src.infrastructure.services.scheduler_service import scheduler_service
+            scheduler_service.shutdown()
+            logger.info("Scheduler shut down")
+        except Exception:
+            pass
+        logger.info("Lifespan cleanup finished")
 
 
 app = FastAPI(
