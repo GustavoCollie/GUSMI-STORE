@@ -26,8 +26,9 @@ const VerifyEmail = () => {
             }
 
             try {
+                const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
                 // El backend espera el token como JSON embebido en el body según auth_routes.py
-                await axios.post('http://localhost:8000/api/v1/auth/verify-email', { token });
+                await axios.post(`${API_URL}/api/v1/auth/verify-email`, { token });
                 setStatus('success');
                 setMessage('¡Tu cuenta ha sido verificada con éxito!');
             } catch (err) {

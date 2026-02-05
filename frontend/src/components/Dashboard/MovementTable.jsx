@@ -266,7 +266,7 @@ export const MovementTable = ({ movements, loading }) => {
                                         <div className="flex items-center justify-center space-x-2">
                                             {move.document_path && (
                                                 <a
-                                                    href={`http://localhost:8000/${move.document_path.replace(/\\/g, '/')}`}
+                                                    href={`${(import.meta.env.VITE_API_URL || 'http://localhost:8000').replace('/api/v1', '')}/${move.document_path.replace(/\\/g, '/')}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="p-2 text-[#5f6368] hover:bg-[#e8f0fe] hover:text-[#1a73e8] rounded-full transition-all"

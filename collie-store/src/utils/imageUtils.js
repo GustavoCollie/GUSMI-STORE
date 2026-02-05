@@ -6,5 +6,6 @@ export const getImageUrl = (path) => {
     // Clean up path - remove leading slash if present
     const cleanPath = path.startsWith('/') ? path.slice(1) : path;
 
-    return `http://localhost:8000/${cleanPath}`;
+    const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace('/api/v1/public', '');
+    return `${baseUrl}/${cleanPath}`;
 };
