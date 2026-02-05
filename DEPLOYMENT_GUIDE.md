@@ -15,25 +15,30 @@ You have already provided the project details. Ensure the following environment 
 3. Configure the following **Environment Variables** in Vercel:
    - `REPOSITORY_TYPE`: `postgres`
    - `DATABASE_URL`: Su URL de Supabase. **IMPORTANTE**: Use la URL del **Transaction Pooler** (Puerto 6543) para Vercel.
-   - `SECRET_KEY`: Generate a secure one using `python scripts/generate_secrets.py`.
-   - `API_KEY`: Generate a secure one (e.g., `dev-secret-key` for now, but change it!).
-   - `ALLOWED_ORIGINS`: Comma-separated list of your frontend URLs (e.g., `https://frontend.vercel.app,https://store.vercel.app`). **Do not include spaces behind commas.**
+   - `SECRET_KEY`: Genere una clave segura (ej: `python scripts/generate_secrets.py`).
+   - `API_KEY`: Genere una clave segura para la administración (ej: `dev-secret-key-123`).
+   - `ALLOWED_ORIGINS`: Lista separada por comas de tus URLs de frontend. **IMPORTANTE**: Incluye todas las variantes.
+     - Ejemplo: `https://almacenes-collie-i8u8.vercel.app,https://colliealmacenes.vercel.app`
    - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`: For email notifications.
 
-## 3. Vercel Frontend Deployment
-1. Select the `frontend` folder.
-2. Configure **Environment Variables**:
-   - `VITE_API_URL`: The URL of your deployed Vercel backend (e.g., `https://your-backend.vercel.app/api/v1`).
-   - `VITE_API_KEY`: Must match the `API_KEY` set in the backend.
+## 3. Despliegue del Frontend (Administración) en Vercel
+1. Conecta el repositorio a Vercel.
+2. Selecciona la carpeta `frontend` como raíz.
+3. Variables de entorno:
+   - `VITE_API_URL`: `https://almacenes-collie.vercel.app/api/v1` (SIN barra final)
+   - `VITE_API_KEY`: El mismo valor que pusiste en el backend.
 
-## 4. Vercel Collie Store Deployment
-1. Select the `collie-store` folder.
-2. Configure **Environment Variables**:
-   - `VITE_API_URL`: The URL of your deployed Vercel backend targeting the public API (e.g., `https://your-backend.vercel.app/api/v1/public`).
-   - `VITE_STRIPE_PUBLISHABLE_KEY`: Your Stripe publishable key if used on the frontend.
+## 4. Despliegue de Collie Store (Tienda Pública) en Vercel
+1. Conecta el repositorio a Vercel.
+2. Selecciona la carpeta `collie-store` como raíz.
+3. Variables de entorno:
+   - `VITE_API_URL`: `https://almacenes-collie.vercel.app/api/v1/public` (SIN barra final)
+   - `VITE_SUPABASE_URL`: Tu URL de Supabase.
+   - `VITE_SUPABASE_ANON_KEY`: Tu clave anónima de Supabase.
+   - `VITE_STRIPE_PUBLISHABLE_KEY`: Tu clave pública de Stripe.
 
-## 5. Database Initialization
-Once the backend is deployed, you need to create the tables. You can do this by hitting the `/health` endpoint once (if the lifespan manager handles it) or running the initialization script locally pointing to the remote DB.
+## 5. Inicialización de la Base de Datos
+Una vez que el backend esté desplegado, puedes crear las tablas corriendo este comando localmente (apuntando a Supabase):
 
 ```bash
 # Locally, update your .env with the Supabase URL, then run:

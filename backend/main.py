@@ -144,7 +144,8 @@ async def log_requests(request: Request, call_next):
     return response
 
 # Configure CORS with dynamic origins
-origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:5174").split(",")
+raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:5174")
+origins = [o.strip() for o in raw_origins.split(",") if o.strip()]
 logger.info(f"CORS configured for origins: {origins}")
 
 app.add_middleware(
