@@ -17,8 +17,14 @@ DATABASE_URL = os.getenv(
 )
 
 # Fix for Supabase/Heroku which uses 'postgres://' but SQLAlchemy needs 'postgresql://'
-if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+if DATABASE_URL:
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    
+    # Proactively remove pgbouncer=true as it causes errors with psycopg2-binary
+    # even when using the transaction pooler (port 6543)
+    if "?pgbouncer=true" in DATABASE_URL:
+        DATABASE_URL = DATABASE_URL.replace("?pgbouncer=true", "")
 
 # Crear engine de SQLAlchemy
 engine_kwargs = {
