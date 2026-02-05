@@ -143,9 +143,13 @@ from src.infrastructure.api.public_routes import router as public_router
 app.include_router(public_router, prefix="/api/v1/public")
 
 # Servir archivos estáticos para documentos subidos
-from fastapi.staticfiles import StaticFiles
-os.makedirs("uploads/documents", exist_ok=True)
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+if not os.getenv("VERCEL"):
+    os.makedirs("uploads/documents", exist_ok=True)
+    from fastapi.staticfiles import StaticFiles
+    app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+else:
+    # On Vercel, we can't save files locally, so we just log it
+    logger.info("Running on Vercel: skipping local uploads directory creation")
 
 
 @app.exception_handler(Exception)
