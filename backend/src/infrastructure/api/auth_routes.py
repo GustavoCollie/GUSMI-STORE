@@ -12,11 +12,11 @@ from fastapi import Request
 
 router = APIRouter(tags=["Auth"])
 
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit("5 per hour")
+@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(
     user_data: UserCreate,
-    api_request: Request,
+    request: Request,
     service: AuthService = Depends(get_auth_service)
 ):
     try:
@@ -24,11 +24,11 @@ async def register(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.post("/login", response_model=Token)
 @limiter.limit("10 per hour")
+@router.post("/login", response_model=Token)
 async def login(
     login_data: UserLogin,
-    api_request: Request,
+    request: Request,
     service: AuthService = Depends(get_auth_service)
 ):
     try:
