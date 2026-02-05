@@ -7,7 +7,7 @@ from src.domain.schemas import (
     PasswordResetRequest, PasswordResetConfirm
 )
 from .dependencies import get_auth_service
-from src.main import limiter
+from .limiter import limiter
 from fastapi import Request
 
 router = APIRouter(tags=["Auth"])
