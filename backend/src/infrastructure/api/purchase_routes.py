@@ -149,7 +149,10 @@ async def update_order(
     try:
         invoice_path = None
         referral_guide_path = None
-        upload_dir = "uploads/documents"
+        
+        # Use /tmp for writable directory on Vercel
+        is_vercel = os.getenv("VERCEL") == "1"
+        upload_dir = "/tmp/uploads/documents" if is_vercel else "uploads/documents"
         os.makedirs(upload_dir, exist_ok=True)
 
         if invoice_file:
