@@ -5,7 +5,7 @@ from decimal import Decimal
 from uuid import UUID
 from typing import Optional, List
 from datetime import datetime
-from pydantic import BaseModel, Field, ConfigDict, EmailStr
+from pydantic import BaseModel, Field, ConfigDict, EmailStr, field_validator
 
 
 # --- Product Schemas ---
@@ -23,6 +23,18 @@ class PublicProductResponse(BaseModel):
     preorder_description: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+    @field_validator("image_path", mode="before")
+    @classmethod
+    def normalize_paths(cls, v):
+        if not v: return v
+        for prefix in ["/tmp/uploads/", "uploads/"]:
+            if v.startswith(prefix):
+                v = v.replace(prefix, "", 1)
+        v = v.lstrip("/")
+        if not v.startswith("uploads/"):
+            v = "uploads/" + v
+        return "/" + v
 
 
 # --- Customer Auth Schemas ---

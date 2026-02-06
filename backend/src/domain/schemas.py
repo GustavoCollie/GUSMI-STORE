@@ -52,6 +52,20 @@ class ProductResponse(BaseModel):
     
     model_config = ConfigDict(from_attributes=True)
 
+    @field_validator("image_path", "tech_sheet_path", mode="before")
+    @classmethod
+    def normalize_paths(cls, v):
+        if not v: return v
+        # Normalize local absolute paths to web relative paths
+        for prefix in ["/tmp/uploads/", "uploads/"]:
+            if v.startswith(prefix):
+                v = v.replace(prefix, "", 1)
+        # Ensure it starts with /uploads/
+        v = v.lstrip("/")
+        if not v.startswith("uploads/"):
+            v = "uploads/" + v
+        return "/" + v
+
 
 class StockOperationRequest(BaseModel):
     """Schema for stock operations (receive/sell)."""
@@ -94,6 +108,18 @@ class MovementResponse(BaseModel):
     date: datetime
     
     model_config = ConfigDict(from_attributes=True)
+
+    @field_validator("document_path", mode="before")
+    @classmethod
+    def normalize_paths(cls, v):
+        if not v: return v
+        for prefix in ["/tmp/uploads/", "uploads/"]:
+            if v.startswith(prefix):
+                v = v.replace(prefix, "", 1)
+        v = v.lstrip("/")
+        if not v.startswith("uploads/"):
+            v = "uploads/" + v
+        return "/" + v
 
 
 class ProductUpdateRequest(BaseModel):

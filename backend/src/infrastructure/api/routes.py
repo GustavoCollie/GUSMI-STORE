@@ -244,18 +244,30 @@ async def patch_product(
     estimated_delivery_date: Optional[str] = Form(None),
     preorder_description: Optional[str] = Form(None),
     initial_reference: Optional[str] = Form(None),
+    image_file: Optional[UploadFile] = File(None),
     tech_sheet_file: Optional[UploadFile] = File(None)
 ) -> ProductResponse:
     # Validate uploaded file
+    if image_file:
+        await validate_upload_file(image_file)
     if tech_sheet_file:
         await validate_upload_file(tech_sheet_file)
     
     document_path = None
+    image_path = None
+    
+    import os
+    is_vercel = os.getenv("VERCEL") == "1"
+    base_upload_dir = "/tmp/uploads" if is_vercel else "uploads"
+
+    if image_file:
+        os.makedirs(f"{base_upload_dir}/products/images", exist_ok=True)
+        image_path = f"{base_upload_dir}/products/images/{uuid.uuid4()}_{image_file.filename}"
+        with open(image_path, "wb") as buffer:
+            content = await image_file.read()
+            buffer.write(content)
+
     if tech_sheet_file:
-        import os
-        is_vercel = os.getenv("VERCEL") == "1"
-        base_upload_dir = "/tmp/uploads" if is_vercel else "uploads"
-        
         upload_dir = f"{base_upload_dir}/documents"
         os.makedirs(upload_dir, exist_ok=True)
         document_path = f"{upload_dir}/{uuid.uuid4()}_{tech_sheet_file.filename}"
@@ -282,10 +294,12 @@ async def patch_product(
             except ValueError:
                 product_updates['estimated_delivery_date'] = datetime.strptime(estimated_delivery_date, "%Y-%m-%d")
 
+        if initial_reference is not None: product_updates['initial_reference'] = initial_reference
+        if document_path is not None: product_updates['initial_document_path'] = document_path
+        if image_path is not None: product_updates['image_path'] = image_path
+        
         product = inv_service.patch_product(
             product_id=product_id,
-            initial_reference=initial_reference,
-            initial_document_path=document_path,
             **product_updates
         )
         return ProductResponse.model_validate(product)
