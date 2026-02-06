@@ -142,13 +142,17 @@ async def create_product(
     os.makedirs(f"{base_upload_dir}/products/specs", exist_ok=True)
 
     if image_file:
-        image_path = f"{base_upload_dir}/products/images/{uuid.uuid4()}_{image_file.filename}"
+        # Sanitize filename: Replace spaces with underscores
+        safe_name = image_file.filename.replace(" ", "_")
+        image_path = f"{base_upload_dir}/products/images/{uuid.uuid4()}_{safe_name}"
         with open(image_path, "wb") as buffer:
             content = await image_file.read()
             buffer.write(content)
 
     if tech_sheet_file:
-        tech_sheet_path = f"{base_upload_dir}/products/specs/{uuid.uuid4()}_{tech_sheet_file.filename}"
+        # Sanitize filename
+        safe_tech_name = tech_sheet_file.filename.replace(" ", "_")
+        tech_sheet_path = f"{base_upload_dir}/products/specs/{uuid.uuid4()}_{safe_tech_name}"
         with open(tech_sheet_path, "wb") as buffer:
             content = await tech_sheet_file.read()
             buffer.write(content)
@@ -262,7 +266,9 @@ async def patch_product(
 
     if image_file:
         os.makedirs(f"{base_upload_dir}/products/images", exist_ok=True)
-        image_path = f"{base_upload_dir}/products/images/{uuid.uuid4()}_{image_file.filename}"
+        # Sanitize filename
+        safe_name = image_file.filename.replace(" ", "_")
+        image_path = f"{base_upload_dir}/products/images/{uuid.uuid4()}_{safe_name}"
         with open(image_path, "wb") as buffer:
             content = await image_file.read()
             buffer.write(content)
