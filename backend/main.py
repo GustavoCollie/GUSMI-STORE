@@ -149,7 +149,7 @@ origins = [o.strip() for o in raw_origins.split(",") if o.strip()]
 
 # Default local origins for development
 if not origins:
-    origins = ["http://localhost:5173", "http://localhost:5174"]
+    origins = ["http://localhost:5173", "http://localhost:5174", "https://almacenes-collie-zrms.vercel.app"]
 
 logger.info(f"CORS configured for origins: {origins}")
 
@@ -159,12 +159,25 @@ vercel_preview_regex = r"https://.*\.vercel\.app"
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_origin_regex=vercel_preview_regex,
+    allow_origins=["*"], # More permissive for public API
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    import traceback
+    error_details = traceback.format_exc()
+    logger.error(f"GLOBAL ERROR: {str(exc)}\n{error_details}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal Server Error", "message": str(exc)},
+        headers={
+            "Access-Control-Allow-Origin": request.headers.get("origin", "*"),
+            "Access-Control-Allow-Credentials": "true"
+        }
+    )
 
 app.include_router(products_router, prefix="/api/v1/products")
 app.include_router(auth_router, prefix="/api/v1/auth")

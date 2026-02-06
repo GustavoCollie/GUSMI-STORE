@@ -72,7 +72,13 @@ class EcommerceService:
             
             # 1. Promotional pricing strictly by date
             is_preorder_marked = product.is_preorder
-            pricing_date_active = product.estimated_delivery_date is None or product.estimated_delivery_date > now
+            
+            # Ensure estimated_delivery_date is aware before comparison
+            est_date = product.estimated_delivery_date
+            if est_date and est_date.tzinfo is None:
+                est_date = est_date.replace(tzinfo=timezone(timedelta(hours=-5)))
+                
+            pricing_date_active = est_date is None or est_date > now
             promo_preorder_active = is_preorder_marked and pricing_date_active
             
             unit_price = product.preorder_price if (promo_preorder_active and product.preorder_price) else product.retail_price

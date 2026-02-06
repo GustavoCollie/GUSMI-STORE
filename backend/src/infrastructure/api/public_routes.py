@@ -50,7 +50,13 @@ def public_list_products(
         # OR 3. Manually marked, date hasn't passed (standard logic)
         
         is_preorder_marked = p.is_preorder
-        date_passed = p.estimated_delivery_date is not None and p.estimated_delivery_date <= now
+        
+        # Ensure estimated_delivery_date is aware before comparison
+        est_date = p.estimated_delivery_date
+        if est_date and est_date.tzinfo is None:
+            est_date = est_date.replace(tzinfo=timezone(timedelta(hours=-5)))
+            
+        date_passed = est_date is not None and est_date <= now
         
         preorder_active = (is_preorder_marked or p.has_pending_purchase_orders) and p.stock <= 0
         if is_preorder_marked and not date_passed:
@@ -97,7 +103,13 @@ def public_get_product(
     now = datetime.now(timezone(timedelta(hours=-5)))
     
     is_preorder_marked = product.is_preorder
-    date_passed = product.estimated_delivery_date is not None and product.estimated_delivery_date <= now
+    
+    # Ensure estimated_delivery_date is aware before comparison
+    est_date = product.estimated_delivery_date
+    if est_date and est_date.tzinfo is None:
+        est_date = est_date.replace(tzinfo=timezone(timedelta(hours=-5)))
+        
+    date_passed = est_date is not None and est_date <= now
     
     preorder_active = (is_preorder_marked or product.has_pending_purchase_orders) and product.stock <= 0
     if is_preorder_marked and not date_passed:
