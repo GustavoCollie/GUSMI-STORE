@@ -144,13 +144,23 @@ async def log_requests(request: Request, call_next):
     return response
 
 # Configure CORS with dynamic origins
-raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:5174")
+raw_origins = os.getenv("ALLOWED_ORIGINS", "")
 origins = [o.strip() for o in raw_origins.split(",") if o.strip()]
+
+# Default local origins for development
+if not origins:
+    origins = ["http://localhost:5173", "http://localhost:5174"]
+
 logger.info(f"CORS configured for origins: {origins}")
+
+# Allow all Vercel preview deployments by regex
+# Format: https://project-name-git-branch-username.vercel.app
+vercel_preview_regex = r"https://.*\.vercel\.app"
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=vercel_preview_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
