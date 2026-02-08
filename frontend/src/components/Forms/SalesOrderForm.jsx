@@ -53,7 +53,9 @@ export const SalesOrderForm = ({ products, onClose, onSubmit, loading, initialDa
                                 {initialData ? 'Editar Orden de Venta' : 'Nueva Orden de Venta'}
                             </h3>
                             <p className="text-xs text-[#5f6368] mt-0.5 font-medium">
-                                {initialData ? 'Modificar detalles de la venta' : 'Registrar una nueva venta y programar despacho'}
+                                {initialData
+                                    ? (formData.shipping_type === 'DELIVERY' ? 'Asignar costo de envío al pedido' : 'Modificar detalles de la venta')
+                                    : 'Registrar una nueva venta y programar despacho'}
                             </p>
                         </div>
                     </div>
@@ -200,7 +202,8 @@ export const SalesOrderForm = ({ products, onClose, onSubmit, loading, initialDa
                                         type="text"
                                         value={formData.shipping_address || ''}
                                         onChange={(e) => setFormData({ ...formData, shipping_address: e.target.value })}
-                                        className="google-input google-input-icon"
+                                        readOnly={isFromOrder}
+                                        className={`google-input google-input-icon ${isFromOrder ? 'bg-gray-50 cursor-not-allowed opacity-70' : ''}`}
                                         placeholder="Dirección completa, Distrito, Referencia"
                                     />
                                 </div>
@@ -214,7 +217,8 @@ export const SalesOrderForm = ({ products, onClose, onSubmit, loading, initialDa
                                     type="date"
                                     value={formData.delivery_date}
                                     onChange={(e) => setFormData({ ...formData, delivery_date: e.target.value })}
-                                    className="google-input google-input-icon"
+                                    readOnly={isFromOrder}
+                                    className={`google-input google-input-icon ${isFromOrder ? 'bg-gray-50 cursor-not-allowed opacity-70' : ''}`}
                                 />
                             </div>
                         </div>
