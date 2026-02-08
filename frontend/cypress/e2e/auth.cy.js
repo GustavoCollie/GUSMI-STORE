@@ -7,7 +7,7 @@ describe('Authentication', () => {
 
     it('should display the login page', () => {
       cy.contains('h1', 'Iniciar sesión').should('be.visible');
-      cy.contains('Usa tu cuenta de Collie Almacenes').should('be.visible');
+      cy.contains('Usa tu cuenta de Almacenes GUSMI').should('be.visible');
       cy.get('input[placeholder="Correo electrónico"]').should('be.visible');
       cy.get('input[placeholder="Introduce tu contraseña"]').should('be.visible');
       cy.contains('button', 'Siguiente').should('be.visible');
@@ -28,7 +28,7 @@ describe('Authentication', () => {
       cy.contains('button', 'Siguiente').click();
 
       cy.url().should('eq', `${Cypress.config('baseUrl')}/`);
-      cy.contains('Collie').should('be.visible');
+      cy.contains('GUSMI').should('be.visible');
       cy.contains('Jefe de Almacén').should('be.visible');
     });
 

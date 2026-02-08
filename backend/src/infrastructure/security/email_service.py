@@ -27,7 +27,7 @@ class SMTPEmailService(EmailService):
         body_html = f"""
         <html>
             <body>
-                <h2>Bienvenido a Collie Almacenes</h2>
+                <h2>Bienvenido a Almacenes GUSMI</h2>
                 <p>Haz clic en el siguiente botón para verificar tu cuenta:</p>
                 <a href="{frontend_url}/verify?token={token}" 
                    style="background-color: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">

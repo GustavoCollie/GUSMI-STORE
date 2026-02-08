@@ -116,7 +116,7 @@ const VerifyEmail = () => {
                 </div>
 
                 <p className="text-center mt-8 text-xs font-bold text-slate-400 uppercase tracking-widest">
-                    © 2026 Collie Almacenes PRO
+                    © 2026 Almacenes GUSMI PRO
                 </p>
             </div>
         </div>

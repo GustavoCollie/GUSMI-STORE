@@ -131,6 +131,6 @@ Cypress.Commands.add('navigateToTab', (tabKey) => {
 });
 
 Cypress.Commands.add('waitForAppLoad', () => {
-  cy.contains('Collie').should('be.visible');
+  cy.contains('GUSMI').should('be.visible');
   cy.contains('Jefe de Almacén').should('be.visible');
 });

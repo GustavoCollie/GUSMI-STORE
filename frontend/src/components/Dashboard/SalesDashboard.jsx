@@ -138,7 +138,7 @@ export const SalesDashboard = ({
         doc.setFontSize(12);
 
         // Header
-        doc.text("COLLIE INVENTARIO", centerX, yPos, { align: "center" });
+        doc.text("GUSMI INVENTARIO", centerX, yPos, { align: "center" });
         yPos += 5;
         doc.setFontSize(10);
         doc.text("TICKET DE VENTA", centerX, yPos, { align: "center" });
@@ -207,7 +207,7 @@ export const SalesDashboard = ({
         doc.setFontSize(8);
         doc.text("Gracias por su compra!", centerX, yPos, { align: "center" });
         yPos += 5;
-        doc.text("www.collie-valley.com", centerX, yPos, { align: "center" });
+        doc.text("www.gusmi-store.com", centerX, yPos, { align: "center" });
 
         // Auto print (optional, just save for now)
         doc.save(`Ticket_OV-${order.id.substring(0, 6)}.pdf`);

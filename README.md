@@ -1,4 +1,4 @@
-# Sistema de Gestión de Inventario "Almacenes Collie"
+# Sistema de Gestión de Inventario "Almacenes GUSMI"
 
 Sistema de gestión de inventario profesional desarrollado con **FastAPI** siguiendo los principios de **Arquitectura Hexagonal** (Ports & Adapters) y **Diseño Atómico**. El sistema incluye funcionalidades avanzadas como trazabilidad documental, generación de actas en PDF, notificaciones por correo y tareas automatizadas.
 

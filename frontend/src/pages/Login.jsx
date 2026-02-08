@@ -44,7 +44,7 @@ export default function Login() {
                             <Package size={40} />
                         </div>
                         <h1 className="text-2xl font-medium text-[#202124] tracking-tight mb-2">Iniciar sesión</h1>
-                        <p className="text-base text-[#202124]">Usa tu cuenta de Collie Almacenes</p>
+                        <p className="text-base text-[#202124]">Usa tu cuenta de Almacenes GUSMI</p>
                     </div>
 
                     {error && (

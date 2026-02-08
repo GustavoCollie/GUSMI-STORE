@@ -57,7 +57,7 @@ export default function Register() {
                     </div>
                     <h2 className="text-2xl font-medium text-[#202124] mb-4">¡Todo listo!</h2>
                     <p className="text-[#5f6368] mb-10">
-                        Tu cuenta de Collie ha sido creada. Ahora puedes gestionar tus almacenes con el mejor estilo Google.
+                        Tu cuenta de GUSMI ha sido creada. Ahora puedes gestionar tus almacenes con el mejor estilo Google.
                     </p>
                     <div className="flex items-center justify-center space-x-3 text-[#1e8e3e] font-medium">
                         <div className="animate-spin rounded-full h-5 w-5 border-2 border-[#e8f5e9] border-b-[#1e8e3e]"></div>
@@ -78,7 +78,7 @@ export default function Register() {
                             <Package size={40} />
                         </div>
                         <h1 className="text-2xl font-medium text-[#202124] tracking-tight mb-2">Crear tu cuenta</h1>
-                        <p className="text-base text-[#202124]">Únete a Collie Almacenes</p>
+                        <p className="text-base text-[#202124]">Únete a Almacenes GUSMI</p>
                     </div>
 
                     {error && (

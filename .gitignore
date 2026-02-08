@@ -73,18 +73,39 @@ backend/app_debug.log
 # Uploads (user-generated files)
 backend/uploads/
 
-# Debug/test scripts at root
-check_db.py
+# Debug/diagnostic/fix scripts (root)
+check_*.py
+fix_*.py
+debug_*.py
+capture_*.py
+diagnose_*.py
+verify_*.py
+create_admin*.py
+init_*.py
+inspect_*.py
+list_images*.py
+list_tables.py
+compare_*.py
+full_fix_*.py
+test_*.py
+*_output.txt
+*_result.txt
+error_*.txt
+diag_*.txt
 db_output.txt
-test_api.py
-test_auto_association.py
 
 # Backend utility/debug scripts
-backend/check_db.py
-backend/check_db_v2.py
-backend/check_products.py
+backend/check_*.py
+backend/debug_*.py
+backend/simple_debug*.py
+backend/final_cleanup.py
+backend/migrate_db.py
+backend/update_schema.py
+backend/verify_fix.py
+backend/test_*.py
+backend/db_init_out.txt
+backend/requirements.original.txt
 backend/cleanup_generated.py
-backend/debug_supplier.py
 backend/fix_orders.py
 backend/generate_products.py
 backend/migrate_sales_address.py
@@ -92,9 +113,6 @@ backend/regenerate_products.py
 backend/reset_database.py
 backend/reset_db.py
 backend/seed_products.py
-backend/test_association.py
-backend/test_create_and_receive.py
-backend/test_stock_update.py
 backend/update_db.py
 
 # Claude

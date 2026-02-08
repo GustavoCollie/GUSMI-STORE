@@ -38,7 +38,7 @@ const OrderDetailModal = ({ order, onClose, statusDetails }) => {
                             <Globe className="w-6 h-6 text-primary-600" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-gray-900 tracking-tight">COLLIE<span className="text-primary-600">IMPORT</span></h2>
+                            <h2 className="text-xl font-bold text-gray-900 tracking-tight">GUSMI<span className="text-primary-600">STORE</span></h2>
                             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">ID del Pedido: {order.id}</p>
                         </div>
                     </div>
@@ -92,7 +92,7 @@ const OrderDetailModal = ({ order, onClose, statusDetails }) => {
                                 <div>
                                     <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mb-1">Destino</p>
                                     <p className="text-sm font-bold text-gray-900 leading-snug">
-                                        {order.shipping_type === 'PICKUP' ? 'Almacén Central Collie' : order.shipping_address}
+                                        {order.shipping_type === 'PICKUP' ? 'Almacén Central GUSMI' : order.shipping_address}
                                     </p>
                                     {order.shipping_type === 'PICKUP' && (
                                         <p className="text-[10px] text-gray-500 mt-1">Calle Los Pinos 123, San Borja, Lima</p>
@@ -181,8 +181,8 @@ const OrderDetailModal = ({ order, onClose, statusDetails }) => {
                                     <div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center mb-1">
                                         <Globe className="w-6 h-6 text-white" />
                                     </div>
-                                    <h4 className="text-2xl font-black tracking-tighter italic">COLLIE IMPORT</h4>
-                                    <p className="text-[10px] text-gray-500 uppercase tracking-widest">Collie Intelligent Systems S.A.C.</p>
+                                    <h4 className="text-2xl font-black tracking-tighter italic">GUSMI STORE</h4>
+                                    <p className="text-[10px] text-gray-500 uppercase tracking-widest">Gusmi Intelligent Systems S.A.C.</p>
                                     <p className="text-[10px] text-gray-500">RUC: 20123456789</p>
                                     <p className="text-[10px] text-gray-500">Calle Las Casuarinas 123, Lima</p>
                                 </div>
@@ -238,7 +238,7 @@ const OrderDetailModal = ({ order, onClose, statusDetails }) => {
                                 </div>
 
                                 <div className="pt-6 space-y-2">
-                                    <p className="text-[9px] text-gray-400 italic">Gracias por confiar en Collie Intelligent Systems. Esta es una representación digital de tu compra.</p>
+                                    <p className="text-[9px] text-gray-400 italic">Gracias por confiar en Gusmi Intelligent Systems. Esta es una representación digital de tu compra.</p>
                                     <div className="w-16 h-16 bg-gray-50 rounded-lg mx-auto flex items-center justify-center border border-gray-100">
                                         <Hash className="w-8 h-8 text-gray-200" />
                                     </div>

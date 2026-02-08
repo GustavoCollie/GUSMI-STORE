@@ -1,5 +1,5 @@
 [project]
-name = "inventory-management"
+name = "gusmi-store"
 version = "0.1.0"
 description = "Sistema de Gestión de Inventario para E-commerce con Arquitectura Hexagonal"
 readme = "README.md"

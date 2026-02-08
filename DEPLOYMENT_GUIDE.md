@@ -18,21 +18,21 @@ You have already provided the project details. Ensure the following environment 
    - `SECRET_KEY`: Genere una clave segura (ej: `python scripts/generate_secrets.py`).
    - `API_KEY`: Genere una clave segura para la administración (ej: `dev-secret-key-123`).
    - `ALLOWED_ORIGINS`: Lista separada por comas de tus URLs de frontend. **IMPORTANTE**: Incluye todas las variantes.
-     - Ejemplo: `https://almacenes-collie-i8u8.vercel.app,https://collie-almacenes.vercel.app`
+     - Ejemplo: `https://gusmi-store-i8u8.vercel.app,https://almacenes-gusmi.vercel.app`
    - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`: For email notifications.
 
 ## 3. Despliegue del Frontend (Administración) en Vercel
 1. Conecta el repositorio a Vercel.
 2. Selecciona la carpeta `frontend` como raíz.
 3. Variables de entorno:
-   - `VITE_API_URL`: `https://almacenes-collie.vercel.app/api/v1` (SIN barra final)
+   - `VITE_API_URL`: `https://gusmi-store.vercel.app/api/v1` (SIN barra final)
    - `VITE_API_KEY`: El mismo valor que pusiste en el backend.
 
-## 4. Despliegue de Collie Store (Tienda Pública) en Vercel
+## 4. Despliegue de Gusmi Store (Tienda Pública) en Vercel
 1. Conecta el repositorio a Vercel.
-2. Selecciona la carpeta `collie-store` como raíz.
+2. Selecciona la carpeta `gusmi-store` como raíz.
 3. Variables de entorno:
-   - `VITE_API_URL`: `https://almacenes-collie.vercel.app/api/v1/public` (SIN barra final)
+   - `VITE_API_URL`: `https://gusmi-store.vercel.app/api/v1/public` (SIN barra final)
    - `VITE_SUPABASE_URL`: Tu URL de Supabase.
    - `VITE_SUPABASE_ANON_KEY`: Tu clave anónima de Supabase.
    - `VITE_STRIPE_PUBLISHABLE_KEY`: Tu clave pública de Stripe.

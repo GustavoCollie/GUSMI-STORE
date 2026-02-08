@@ -41,9 +41,9 @@ const Navbar = () => {
                         </div>
                         <div className="flex flex-col -space-y-1.5">
                             <span className="text-xl font-black text-slate-900 tracking-tighter">
-                                COLLIE<span className="text-primary-600">IMPORT</span>
+                                GUSMI<span className="text-primary-600">STORE</span>
                             </span>
-                            <span className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-400">Digital Importer</span>
+                            <span className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-400">Digital Store</span>
                         </div>
                     </Link>
 

@@ -100,7 +100,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Collie Valley Inventory Management API",
+    title="GUSMI Store Inventory Management API",
     description="""
     ## Comprehensive Inventory Management System
     
@@ -120,8 +120,8 @@ app = FastAPI(
     """,
     version="1.0.0",
     contact={
-        "name": "Collie Valley Support",
-        "email": "support@collievalley.com",
+        "name": "GUSMI Store Support",
+        "email": "support@gusmi-store.com",
     },
     lifespan=lifespan
 )

@@ -200,7 +200,7 @@ function App() {
           <div className="p-2 text-[#1a73e8] hover:bg-[#f1f3f4] rounded-full transition-colors cursor-pointer">
             <LayoutDashboard size={24} />
           </div>
-          <span className="text-[22px] font-medium text-[#202124] tracking-tight ml-1">Collie <span className="text-[#5f6368] font-normal">Inventario</span></span>
+          <span className="text-[22px] font-medium text-[#202124] tracking-tight ml-1">GUSMI <span className="text-[#5f6368] font-normal">Inventario</span></span>
         </div>
 
         <div className="flex-1 max-w-2xl mx-12">
@@ -443,7 +443,7 @@ function App() {
       </main>
 
       <footer className="mt-12 py-8 border-t border-[#dadce0] text-center">
-        <p className="text-[#5f6368] text-xs font-medium">Collie Almacenes • © 2026 • Design by Google Style</p>
+        <p className="text-[#5f6368] text-xs font-medium">Almacenes GUSMI • © 2026 • Design by Google Style</p>
       </footer>
 
       {showForm && (

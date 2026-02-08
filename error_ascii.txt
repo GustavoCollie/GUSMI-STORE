@@ -1,8 +1,0 @@
-Testing login to https://almacenes-collie.vercel.app/api/v1/auth/login...
-Status: 500
-Response JSON:
-{
-  "error": "Internal Server Error",
-  "message": "(psycopg2.OperationalError) connection to server at \"db.zinshpnfzneiduwvwesx.supabase.co\" (2600:1f13:838:6e04:b4ee:4c19:b365:1bf8), port 5432 failed: Cannot assign requested address\n\tIs the server running on that host and accepting TCP/IP connections?\n\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
-  "type": "OperationalError"
-}

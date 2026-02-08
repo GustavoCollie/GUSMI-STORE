@@ -148,7 +148,7 @@ class PurchaseService:
         
         # Signatures
         elements.append(Paragraph("_" * 40, styles['Normal']))
-        elements.append(Paragraph("Jefe de Comercio - Collie", styles['Normal']))
+        elements.append(Paragraph("Jefe de Comercio - GUSMI", styles['Normal']))
         
         doc.build(elements)
         return filepath

@@ -1,6 +1,6 @@
 # Guía de Despliegue a Producción
 
-Este documento detalla los pasos para desplegar el sistema de inventario y la tienda Collie Store a producción usando **Supabase** y **Vercel**.
+Este documento detalla los pasos para desplegar el sistema de inventario y la tienda Gusmi Store a producción usando **Supabase** y **Vercel**.
 
 ## 1. Base de Datos (Supabase)
 
@@ -20,9 +20,9 @@ Este documento detalla los pasos para desplegar el sistema de inventario y la ti
    - `SECRET_KEY`: Una cadena aleatoria para JWT.
 3. Despliega la carpeta `backend`.
 
-## 3. Frontend (Collie Store) en Vercel
+## 3. Frontend (Gusmi Store) en Vercel
 
-1. Conecta el repositorio o despliega la carpeta `collie-store`.
+1. Conecta el repositorio o despliega la carpeta `gusmi-store`.
 2. Configura las **Environment Variables**:
    - `VITE_API_URL`: La URL del backend desplegado en el paso anterior (ej: `https://tu-api.vercel.app/api/v1/public`).
 3. El archivo `vercel.json` incluido manejará el ruteo de React.

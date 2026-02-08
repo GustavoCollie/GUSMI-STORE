@@ -18,9 +18,9 @@ export const Footer = () => {
                             </div>
                             <div className="flex flex-col -space-y-1">
                                 <span className="text-2xl font-black text-white tracking-tighter">
-                                    COLLIE<span className="text-primary-400">IMPORT</span>
+                                    GUSMI<span className="text-primary-400">STORE</span>
                                 </span>
-                                <span className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">Digital Importer</span>
+                                <span className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">Digital Store</span>
                             </div>
                         </Link>
                         <p className="text-slate-400 text-sm leading-relaxed max-w-xs">
@@ -75,7 +75,7 @@ export const Footer = () => {
                             </li>
                             <li className="flex items-center space-x-3 text-slate-400">
                                 <Mail size={18} className="text-primary-400" />
-                                <span>hola@collie-import.com</span>
+                                <span>hola@gusmi-store.com</span>
                             </li>
                         </ul>
                     </div>
@@ -84,12 +84,12 @@ export const Footer = () => {
                 {/* Bottom Bar */}
                 <div className="pt-10 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6">
                     <p className="text-xs text-slate-500 font-medium tracking-wide">
-                        &copy; 2026 Collie Import. Todos los derechos reservados.
+                        &copy; 2026 Gusmi Store. Todos los derechos reservados.
                     </p>
                     <div className="flex items-center space-x-2 text-[10px] uppercase font-bold text-slate-600">
                         <span>Powered by</span>
                         <span className="text-slate-400 flex items-center">
-                            Collie Intelligent Systems <ExternalLink size={10} className="ml-1" />
+                            Gusmi Intelligent Systems <ExternalLink size={10} className="ml-1" />
                         </span>
                     </div>
                 </div>

@@ -100,7 +100,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Collie Valley Inventory Management API",
+    title="GUSMI Store Inventory Management API",
     description="""
     ## Comprehensive Inventory Management System
     
@@ -120,8 +120,8 @@ app = FastAPI(
     """,
     version="1.0.0",
     contact={
-        "name": "Collie Valley Support",
-        "email": "support@collievalley.com",
+        "name": "GUSMI Store Support",
+        "email": "support@gusmi-store.com",
     },
     lifespan=lifespan
 )
@@ -149,7 +149,7 @@ origins = [o.strip() for o in raw_origins.split(",") if o.strip()]
 
 # Default local origins for development
 if not origins:
-    origins = ["http://localhost:5173", "http://localhost:5174", "https://almacenes-collie-zrms.vercel.app"]
+    origins = ["http://localhost:5173", "http://localhost:5174", "https://gusmi-store.vercel.app"]
 
 logger.info(f"CORS configured for origins: {origins}")
 
