@@ -28,6 +28,7 @@ class PublicProductResponse(BaseModel):
     @classmethod
     def normalize_paths(cls, v):
         if not v: return v
+        if v.startswith("http"): return v  # External URLs (e.g. Supabase Storage)
         for prefix in ["/tmp/uploads/", "uploads/"]:
             if v.startswith(prefix):
                 v = v.replace(prefix, "", 1)

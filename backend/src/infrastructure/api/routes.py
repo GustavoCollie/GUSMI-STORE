@@ -132,30 +132,41 @@ async def create_product(
 
     import os
     from decimal import Decimal
-    
-    # Use /tmp on Vercel, otherwise local uploads/
-    is_vercel = os.getenv("VERCEL") == "1"
-    base_upload_dir = "/tmp/uploads" if is_vercel else "uploads"
-    
-    # Ensure directories exist
-    os.makedirs(f"{base_upload_dir}/products/images", exist_ok=True)
-    os.makedirs(f"{base_upload_dir}/products/specs", exist_ok=True)
+    from src.infrastructure.storage import supabase_storage
+
+    use_supabase = supabase_storage.is_configured()
 
     if image_file:
-        # Sanitize filename: Replace spaces with underscores
         safe_name = image_file.filename.replace(" ", "_")
-        image_path = f"{base_upload_dir}/products/images/{uuid.uuid4()}_{safe_name}"
-        with open(image_path, "wb") as buffer:
-            content = await image_file.read()
-            buffer.write(content)
+        file_key = f"images/{uuid.uuid4()}_{safe_name}"
+        content = await image_file.read()
+
+        if use_supabase:
+            image_path = supabase_storage.upload_file(file_key, content, image_file.content_type or "image/jpeg")
+        else:
+            is_vercel = os.getenv("VERCEL") == "1"
+            base_upload_dir = "/tmp/uploads" if is_vercel else "uploads"
+            os.makedirs(f"{base_upload_dir}/products/images", exist_ok=True)
+            local_path = f"{base_upload_dir}/products/{file_key}"
+            with open(local_path, "wb") as buffer:
+                buffer.write(content)
+            image_path = local_path
 
     if tech_sheet_file:
-        # Sanitize filename
         safe_tech_name = tech_sheet_file.filename.replace(" ", "_")
-        tech_sheet_path = f"{base_upload_dir}/products/specs/{uuid.uuid4()}_{safe_tech_name}"
-        with open(tech_sheet_path, "wb") as buffer:
-            content = await tech_sheet_file.read()
-            buffer.write(content)
+        file_key = f"specs/{uuid.uuid4()}_{safe_tech_name}"
+        content = await tech_sheet_file.read()
+
+        if use_supabase:
+            tech_sheet_path = supabase_storage.upload_file(file_key, content, tech_sheet_file.content_type or "application/pdf")
+        else:
+            is_vercel = os.getenv("VERCEL") == "1"
+            base_upload_dir = "/tmp/uploads" if is_vercel else "uploads"
+            os.makedirs(f"{base_upload_dir}/products/specs", exist_ok=True)
+            local_path = f"{base_upload_dir}/products/{file_key}"
+            with open(local_path, "wb") as buffer:
+                buffer.write(content)
+            tech_sheet_path = local_path
 
     try:
         from src.domain.entities import get_local_time
@@ -259,27 +270,43 @@ async def patch_product(
     
     document_path = None
     image_path = None
-    
+
     import os
-    is_vercel = os.getenv("VERCEL") == "1"
-    base_upload_dir = "/tmp/uploads" if is_vercel else "uploads"
+    from src.infrastructure.storage import supabase_storage
+
+    use_supabase = supabase_storage.is_configured()
 
     if image_file:
-        os.makedirs(f"{base_upload_dir}/products/images", exist_ok=True)
-        # Sanitize filename
         safe_name = image_file.filename.replace(" ", "_")
-        image_path = f"{base_upload_dir}/products/images/{uuid.uuid4()}_{safe_name}"
-        with open(image_path, "wb") as buffer:
-            content = await image_file.read()
-            buffer.write(content)
+        file_key = f"images/{uuid.uuid4()}_{safe_name}"
+        content = await image_file.read()
+
+        if use_supabase:
+            image_path = supabase_storage.upload_file(file_key, content, image_file.content_type or "image/jpeg")
+        else:
+            is_vercel = os.getenv("VERCEL") == "1"
+            base_upload_dir = "/tmp/uploads" if is_vercel else "uploads"
+            os.makedirs(f"{base_upload_dir}/products/images", exist_ok=True)
+            local_path = f"{base_upload_dir}/products/{file_key}"
+            with open(local_path, "wb") as buffer:
+                buffer.write(content)
+            image_path = local_path
 
     if tech_sheet_file:
-        upload_dir = f"{base_upload_dir}/documents"
-        os.makedirs(upload_dir, exist_ok=True)
-        document_path = f"{upload_dir}/{uuid.uuid4()}_{tech_sheet_file.filename}"
-        with open(document_path, "wb") as buffer:
-            content = await tech_sheet_file.read()
-            buffer.write(content)
+        safe_tech_name = tech_sheet_file.filename.replace(" ", "_")
+        file_key = f"docs/{uuid.uuid4()}_{safe_tech_name}"
+        content = await tech_sheet_file.read()
+
+        if use_supabase:
+            document_path = supabase_storage.upload_file(file_key, content, tech_sheet_file.content_type or "application/pdf")
+        else:
+            is_vercel = os.getenv("VERCEL") == "1"
+            base_upload_dir = "/tmp/uploads" if is_vercel else "uploads"
+            upload_dir = f"{base_upload_dir}/documents"
+            os.makedirs(upload_dir, exist_ok=True)
+            document_path = f"{upload_dir}/{uuid.uuid4()}_{tech_sheet_file.filename}"
+            with open(document_path, "wb") as buffer:
+                buffer.write(content)
 
     try:
         from decimal import Decimal

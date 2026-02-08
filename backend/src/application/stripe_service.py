@@ -61,34 +61,44 @@ class StripeService:
         shipping_address = items[0].get("shipping_address", "") if items else ""
 
         for item in items:
-            unit_price = Decimal(str(item["unit_price"]))
-            if apply_discount:
-                unit_price = unit_price * (1 - self.DISCOUNT_PERCENT)
-            # Stripe expects amount in cents (smallest currency unit)
-            unit_amount = int(unit_price * 100)
-            
-            product_data = {
-                "name": item["product_name"],
-                "metadata": {"product_id": str(item["product_id"])},
-            }
-            
-            # Add image if available
-            image_path = item.get("image_path")
-            if image_path:
-                backend_url = os.getenv("BACKEND_URL", "http://localhost:8000")
-                # Ensure the URL is accessible to Stripe (needs public URL in production)
-                # For dev, we use the local URL which Stripe might not reach but helps for logic
-                full_image_url = f"{backend_url}/uploads/{image_path}" if not image_path.startswith("http") else image_path
-                product_data["images"] = [full_image_url]
+            stripe_price_id = item.get("stripe_price_id")
 
-            line_items.append({
-                "price_data": {
-                    "currency": "pen",
-                    "product_data": product_data,
-                    "unit_amount": unit_amount,
-                },
-                "quantity": item["quantity"],
-            })
+            if stripe_price_id:
+                # Use pre-created Price ID from Stripe Dashboard
+                line_items.append({
+                    "price": stripe_price_id,
+                    "quantity": item["quantity"],
+                })
+            else:
+                # Fallback: inline price (current behavior)
+                unit_price = Decimal(str(item["unit_price"]))
+                if apply_discount:
+                    unit_price = unit_price * (1 - self.DISCOUNT_PERCENT)
+                unit_amount = int(unit_price * 100)
+
+                product_data = {
+                    "name": item["product_name"],
+                    "metadata": {"product_id": str(item["product_id"])},
+                }
+
+                # Add image if available
+                image_path = item.get("image_path")
+                if image_path:
+                    backend_url = os.getenv("BACKEND_URL", "http://localhost:8000")
+                    if image_path.startswith("http"):
+                        full_image_url = image_path
+                    else:
+                        full_image_url = f"{backend_url}/uploads/{image_path}"
+                    product_data["images"] = [full_image_url]
+
+                line_items.append({
+                    "price_data": {
+                        "currency": "pen",
+                        "product_data": product_data,
+                        "unit_amount": unit_amount,
+                    },
+                    "quantity": item["quantity"],
+                })
 
         session = stripe.checkout.Session.create(
             payment_method_types=["card"],

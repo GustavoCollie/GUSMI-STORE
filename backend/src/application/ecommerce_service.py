@@ -88,6 +88,7 @@ class EcommerceService:
                 "unit_price": unit_price,
                 "quantity": item.quantity,
                 "image_path": product.image_path,
+                "stripe_price_id": product.stripe_price_id,
             })
 
         return self._stripe.create_checkout_session(
