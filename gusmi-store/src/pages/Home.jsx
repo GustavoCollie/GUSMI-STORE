@@ -196,7 +196,7 @@ const Home = () => {
                                         ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                                         : activePreorder
                                             ? "bg-accent-500 text-white hover:bg-accent-600 hover:shadow-xl hover:shadow-accent-200"
-                                            : "bg-gray-900 text-white hover:bg-black hover:shadow-xl hover:shadow-gray-200"
+                                            : "bg-primary-600 text-white hover:bg-primary-700 hover:shadow-xl hover:shadow-primary-200"
                                 )}
                             >
                                 <ShoppingCart size={14} />
@@ -275,7 +275,7 @@ const Home = () => {
 
                         {/* Decorative Banner between sections */}
                         {regularProducts.length > 0 && preorderProducts.length > 0 && (
-                            <div className="bg-gradient-to-br from-primary-700 via-primary-600 to-primary-800 rounded-3xl p-8 md:p-12 text-white shadow-xl shadow-primary-200/50 relative overflow-hidden">
+                            <div className="bg-gradient-to-br from-primary-700 via-primary-600 to-accent-500 rounded-3xl p-8 md:p-12 text-white shadow-xl shadow-primary-200/50 relative overflow-hidden">
                                 <div className="absolute inset-0 opacity-10">
                                     <div className="absolute top-0 right-0 w-64 h-64 bg-white/20 rounded-full -translate-y-1/2 translate-x-1/2" />
                                     <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />

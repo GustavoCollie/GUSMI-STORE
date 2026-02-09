@@ -183,7 +183,7 @@ const ProductDetails = () => {
                                         activePreorder
                                             ? "bg-accent-500 text-white hover:bg-accent-600 shadow-accent-300 ring-4 ring-accent-50"
                                             : product.stock > 0
-                                                ? "bg-gray-900 text-white hover:bg-black shadow-gray-300 ring-4 ring-gray-50"
+                                                ? "bg-primary-600 text-white hover:bg-primary-700 shadow-primary-300 ring-4 ring-primary-50"
                                                 : "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none"
                                     )}
                                 >
