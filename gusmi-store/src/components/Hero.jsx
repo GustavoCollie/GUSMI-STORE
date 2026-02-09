@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowRight, ShieldCheck, Clock, Headphones, Wrench, Award, PhoneCall, ChevronLeft, ChevronRight } from 'lucide-react';
 
+const WHATSAPP_URL = "https://wa.me/51995876300";
+
 const banners = [
     {
         id: 1,
@@ -8,7 +10,9 @@ const banners = [
         title: "Transforma tu cosecha con tecnología de precisión",
         subtitle: "Importación directa, resultados garantizados. Ahorra hasta 40% en agua con nuestros sistemas de riego.",
         cta: "Ver Catálogo en Stock",
+        ctaAction: () => document.getElementById('productos-stock')?.scrollIntoView({ behavior: 'smooth' }),
         ctaSecondary: "Asesoría Gratuita",
+        ctaSecondaryAction: () => window.open(WHATSAPP_URL, '_blank'),
         socialProof: "+500 agricultores confían en nosotros",
         gradient: "from-[#1b5e20] via-[#2e7d32] to-[#43a047]",
         badgeColor: "bg-white/15 text-white border-white/25",
@@ -19,6 +23,7 @@ const banners = [
         title: "¡No esperes a que se agoten!",
         subtitle: "Asegura tu sistema de riego en ruta con precio especial de Pre-Venta. Llegadas mensuales directo de fábrica.",
         cta: "Ver Pre-Ventas",
+        ctaAction: () => document.getElementById('productos-preventa')?.scrollIntoView({ behavior: 'smooth' }),
         urgency: "Precio especial por tiempo limitado",
         gradient: "from-[#e65100] via-[#f57c00] to-[#ffa726]",
         badgeColor: "bg-white/20 text-white border-white/30",
@@ -29,6 +34,7 @@ const banners = [
         title: "Más que productos, soluciones",
         subtitle: "Asesoría técnica en cada importación. Te acompañamos desde la selección hasta la instalación.",
         cta: "Contactar Asesor",
+        ctaAction: () => window.open(WHATSAPP_URL, '_blank'),
         cards: [
             { icon: Wrench, label: "Instalación guiada" },
             { icon: Award, label: "Garantía directa" },
@@ -103,12 +109,12 @@ export const Hero = () => {
 
                     {/* CTAs */}
                     <div className="flex flex-wrap gap-4 mb-8">
-                        <button className="bg-white text-gray-900 px-8 py-3.5 rounded-full font-bold transition-all shadow-lg hover:shadow-xl hover:scale-105 flex items-center space-x-2 group">
+                        <button onClick={banner.ctaAction} className="bg-white text-gray-900 px-8 py-3.5 rounded-full font-bold transition-all shadow-lg hover:shadow-xl hover:scale-105 flex items-center space-x-2 group">
                             <span>{banner.cta}</span>
                             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                         </button>
                         {banner.ctaSecondary && (
-                            <button className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/20 px-8 py-3.5 rounded-full font-bold transition-all flex items-center space-x-2">
+                            <button onClick={banner.ctaSecondaryAction} className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/20 px-8 py-3.5 rounded-full font-bold transition-all flex items-center space-x-2">
                                 <PhoneCall className="w-4 h-4" />
                                 <span>{banner.ctaSecondary}</span>
                             </button>

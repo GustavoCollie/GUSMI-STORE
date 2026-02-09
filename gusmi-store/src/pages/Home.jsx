@@ -259,7 +259,7 @@ const Home = () => {
                     <div className="space-y-12">
                         {/* Regular Products */}
                         {regularProducts.length > 0 && (
-                            <div>
+                            <div id="productos-stock">
                                 <div className="flex items-center gap-3 mb-6">
                                     <div className="bg-green-100 text-green-700 p-2 rounded-lg">
                                         <ShoppingBag className="w-5 h-5" />
@@ -322,7 +322,7 @@ const Home = () => {
 
                         {/* Preorder Products */}
                         {preorderProducts.length > 0 && (
-                            <div>
+                            <div id="productos-preventa">
                                 <div className="bg-gradient-to-r from-primary-700 to-primary-600 rounded-2xl p-6 mb-6 text-white shadow-lg shadow-primary-200">
                                     <div className="flex items-center gap-3">
                                         <div className="bg-white/20 p-2.5 rounded-xl">
