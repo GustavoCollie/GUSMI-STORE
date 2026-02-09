@@ -17,6 +17,7 @@ class PublicProductResponse(BaseModel):
     stock: int
     retail_price: Decimal
     image_path: Optional[str] = None
+    tech_sheet_path: Optional[str] = None
     is_preorder: bool = False
     preorder_price: Optional[Decimal] = None
     estimated_delivery_date: Optional[datetime] = None
@@ -24,7 +25,7 @@ class PublicProductResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    @field_validator("image_path", mode="before")
+    @field_validator("image_path", "tech_sheet_path", mode="before")
     @classmethod
     def normalize_paths(cls, v):
         if not v: return v
