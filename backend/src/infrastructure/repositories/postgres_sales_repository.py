@@ -25,6 +25,7 @@ class PostgresSalesRepository(SalesRepository):
             shipping_address=sales_order.shipping_address,
             delivery_date=sales_order.delivery_date,
             status=sales_order.status,
+            stripe_session_id=sales_order.stripe_session_id,
             created_at=sales_order.created_at
         )
         self.session.add(model)
@@ -82,6 +83,12 @@ class PostgresSalesRepository(SalesRepository):
             self.session.delete(model)
             self.session.commit()
 
+    def find_by_stripe_session_id(self, session_id: str) -> List[SalesOrder]:
+        models = self.session.query(SalesOrderModel).filter(
+            SalesOrderModel.stripe_session_id == session_id
+        ).all()
+        return [self._to_entity(m) for m in models]
+
     def get_kpis(self) -> dict:
         orders = self.session.query(SalesOrderModel).all()
         total_revenue = sum(o.total_amount for o in orders)
@@ -124,6 +131,7 @@ class PostgresSalesRepository(SalesRepository):
             shipping_address=m.shipping_address,
             delivery_date=m.delivery_date,
             status=m.status,
+            stripe_session_id=m.stripe_session_id,
             created_at=m.created_at,
             product_name=m.product.name if m.product else None,
             product_image=m.product.image_path if m.product else None

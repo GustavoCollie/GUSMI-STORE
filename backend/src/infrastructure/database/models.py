@@ -210,16 +210,18 @@ class SalesOrderModel(Base):
     shipping_address = Column(String(500), nullable=True)
     delivery_date = Column(DateTime, nullable=True)
     status = Column(String(20), default="PENDING") # PENDING, COMPLETED, CANCELLED
+    stripe_session_id = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=get_local_time)
-    
+
     # Relationships
     product = relationship("ProductModel", back_populates="sales_orders")
-    
+
     # Índices para mejorar performance
     __table_args__ = (
         Index('idx_sales_customer_email', 'customer_email'),
         Index('idx_sales_status', 'status'),
         Index('idx_sales_created_at', 'created_at'),
+        Index('idx_sales_stripe_session', 'stripe_session_id'),
     )
 
     def __repr__(self):

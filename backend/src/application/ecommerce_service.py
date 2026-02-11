@@ -102,10 +102,35 @@ class EcommerceService:
         )
 
     def create_orders_from_session(self, session_id: str) -> dict:
-        """Verify Stripe payment and create SalesOrders (one per item)."""
+        """Verify Stripe payment and create SalesOrders (one per item). Idempotent by session_id."""
+        # Idempotency: if orders already exist for this session, return them
+        existing_orders = self._sales.find_by_stripe_session_id(session_id)
+        if existing_orders:
+            order_ids = [str(o.id) for o in existing_orders]
+            order_items = []
+            total = Decimal("0.00")
+            for o in existing_orders:
+                order_items.append({
+                    "product_id": str(o.product_id),
+                    "product_name": o.product_name or "",
+                    "quantity": o.quantity,
+                    "unit_price": float(o.unit_price),
+                    "subtotal": float(o.subtotal),
+                    "tax_amount": float(o.tax_amount),
+                    "total_amount": float(o.total_amount),
+                })
+                total += o.total_amount
+            return {
+                "order_ids": order_ids,
+                "items": order_items,
+                "total_amount": float(total),
+                "status": existing_orders[0].status,
+                "delivery_date": existing_orders[0].delivery_date.isoformat() if existing_orders[0].delivery_date else None,
+            }
+
         session_data = self._stripe.verify_session(session_id)
         metadata = session_data["metadata"]
-        
+
         from src.domain.sales_entities import get_local_time
         now = get_local_time()
         delivery_date = now + timedelta(hours=48)
@@ -169,6 +194,7 @@ class EcommerceService:
                 shipping_address=shipping_address,
                 delivery_date=delivery_date if shipping_type == "DELIVERY" else None,
                 status="PENDING",
+                stripe_session_id=session_id,
             )
             self._sales.save(order)
 

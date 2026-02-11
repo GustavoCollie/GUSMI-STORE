@@ -33,5 +33,9 @@ class SalesRepository(ABC):
         pass
         
     @abstractmethod
+    def find_by_stripe_session_id(self, session_id: str) -> List[SalesOrder]:
+        pass
+
+    @abstractmethod
     def get_kpis(self) -> dict:
         pass

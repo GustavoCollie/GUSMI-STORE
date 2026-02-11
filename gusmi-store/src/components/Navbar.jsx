@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useCustomerAuth } from '../context/CustomerAuthContext';
@@ -11,15 +11,28 @@ const Navbar = () => {
     const [searchParams] = useSearchParams();
     const searchQuery = searchParams.get('search') || '';
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [searchValue, setSearchValue] = useState(searchQuery);
 
     const handleSearchChange = (e) => {
-        const value = e.target.value;
-        if (value) {
-            navigate(`/?search=${encodeURIComponent(value)}`);
-        } else {
-            navigate('/');
-        }
+        setSearchValue(e.target.value);
     };
+
+    // Debounce navigation on search input and reset page to 1
+    useEffect(() => {
+        const t = setTimeout(() => {
+            if (searchValue && searchValue.trim().length > 0) {
+                navigate(`/?search=${encodeURIComponent(searchValue.trim())}&page=1`);
+            } else {
+                navigate('/?page=1');
+            }
+        }, 350);
+        return () => clearTimeout(t);
+    }, [searchValue, navigate]);
+
+    // Keep input in sync with URL (when user navigates externally)
+    useEffect(() => {
+        setSearchValue(searchQuery);
+    }, [searchQuery]);
 
     const handleLogout = () => {
         logout();
@@ -52,7 +65,7 @@ const Navbar = () => {
                         <input
                             type="text"
                             placeholder="Buscar productos..."
-                            value={searchQuery}
+                            value={searchValue}
                             onChange={handleSearchChange}
                             className="w-full pl-10 pr-4 py-2 rounded-full border border-gray-100 focus:border-primary-500 focus:ring-4 focus:ring-primary-50 transition-all outline-none bg-gray-50 text-sm"
                         />
@@ -128,14 +141,14 @@ const Navbar = () => {
             {mobileOpen && (
                 <div className="lg:hidden border-t border-gray-100 bg-white px-4 pb-4 pt-3 space-y-3">
                     {/* Mobile search */}
-                    <div className="relative md:hidden">
+                        <div className="relative md:hidden">
                         <input
                             type="text"
                             placeholder="Buscar productos..."
-                            value={searchQuery}
-                            onChange={(e) => {
-                                handleSearchChange(e);
-                            }}
+                                value={searchValue}
+                                onChange={(e) => {
+                                    handleSearchChange(e);
+                                }}
                             className="w-full pl-10 pr-4 py-2.5 rounded-full border border-gray-100 focus:border-primary-500 focus:ring-4 focus:ring-primary-50 transition-all outline-none bg-gray-50 text-sm"
                         />
                         <Search className="w-5 h-5 text-gray-400 absolute left-3 top-3" />

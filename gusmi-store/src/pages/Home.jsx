@@ -8,6 +8,7 @@ import { getImageUrl } from '../utils/imageUtils';
 import { isCurrentlyPreorder, getActivePrice } from '../utils/productUtils';
 
 import { Hero } from '../components/Hero';
+import Pagination from '../components/Pagination';
 
 const Home = () => {
     const [products, setProducts] = useState([]);
@@ -19,6 +20,9 @@ const Home = () => {
     const { addToCart } = useCart();
 
     const searchQuery = searchParams.get('search')?.toLowerCase() || '';
+    const pageParam = parseInt(searchParams.get('page') || '1', 10) || 1;
+    const PAGE_SIZE = 12;
+    const tabParam = searchParams.get('tab') || null;
 
     useEffect(() => {
         const loadProducts = async () => {
@@ -42,6 +46,23 @@ const Home = () => {
 
     const regularProducts = filteredProducts.filter(p => !isCurrentlyPreorder(p));
     const preorderProducts = filteredProducts.filter(p => isCurrentlyPreorder(p));
+
+    const totalRegularPages = Math.max(1, Math.ceil(regularProducts.length / PAGE_SIZE));
+    const [currentPage, setCurrentPage] = useState(pageParam);
+    useEffect(() => setCurrentPage(pageParam), [pageParam]);
+
+    const [activeTab, setActiveTab] = useState(tabParam || 'all'); // 'all' | 'available' | 'preorder'
+
+    // default to 'available' on small screens for better UX
+    useEffect(() => {
+        if (!tabParam) {
+            try {
+                if (window.innerWidth < 768) setActiveTab('available');
+            } catch (e) {}
+        }
+    }, []);
+
+    const paginatedRegular = regularProducts.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
     const getCountdown = (dateStr) => {
         if (!dateStr) return null;
@@ -216,12 +237,17 @@ const Home = () => {
         );
     };
 
+    useEffect(() => {
+        // Always start from top when search, page or tab changes
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [currentPage, searchQuery, activeTab]);
+
     return (
         <div className="bg-white min-h-screen">
             <Hero />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-                <div className="flex items-center justify-between mb-12">
+                <div className="flex items-center justify-between mb-6">
                     <div>
                         <h2 className="text-3xl font-extrabold text-gray-900 font-['Outfit'] tracking-tight">
                             {searchQuery ? `Resultados para "${searchQuery}"` : "Nuestros Productos"}
@@ -234,6 +260,47 @@ const Home = () => {
                         </p>
                     </div>
                     <div className="h-0.5 flex-1 bg-gray-100 mx-8 hidden md:block" />
+                </div>
+
+                {/* Tabs / Filters */}
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+                    <div className="flex items-center gap-3 justify-start overflow-x-auto py-2">
+                        <button
+                            onClick={() => {
+                                setActiveTab('all');
+                                const params = new URLSearchParams(Array.from(searchParams.entries()));
+                                params.set('tab', 'all');
+                                params.set('page', '1');
+                                navigate(`/?${params.toString()}`);
+                            }}
+                            className={`px-4 py-2 rounded-full font-bold ${activeTab === 'all' ? 'bg-primary-600 text-white' : 'bg-white border border-gray-200 text-gray-700'}`}>
+                            Todos <span className="ml-2 text-xs bg-gray-100 px-2 py-0.5 rounded-full font-medium">{filteredProducts.length}</span>
+                        </button>
+
+                        <button
+                            onClick={() => {
+                                setActiveTab('available');
+                                const params = new URLSearchParams(Array.from(searchParams.entries()));
+                                params.set('tab', 'available');
+                                params.set('page', '1');
+                                navigate(`/?${params.toString()}`);
+                            }}
+                            className={`px-4 py-2 rounded-full font-bold ${activeTab === 'available' ? 'bg-primary-600 text-white' : 'bg-white border border-gray-200 text-gray-700'}`}>
+                            Disponibles <span className="ml-2 text-xs bg-gray-100 px-2 py-0.5 rounded-full font-medium">{regularProducts.length}</span>
+                        </button>
+
+                        <button
+                            onClick={() => {
+                                setActiveTab('preorder');
+                                const params = new URLSearchParams(Array.from(searchParams.entries()));
+                                params.set('tab', 'preorder');
+                                params.set('page', '1');
+                                navigate(`/?${params.toString()}`);
+                            }}
+                            className={`px-4 py-2 rounded-full font-bold ${activeTab === 'preorder' ? 'bg-accent-500 text-white' : 'bg-white border border-gray-200 text-gray-700'}`}>
+                            Pre-Venta <span className="ml-2 text-xs bg-gray-100 px-2 py-0.5 rounded-full font-medium">{preorderProducts.length}</span>
+                        </button>
+                    </div>
                 </div>
 
                 {loading ? (
@@ -258,7 +325,7 @@ const Home = () => {
                 ) : (
                     <div className="space-y-12">
                         {/* Regular Products */}
-                        {regularProducts.length > 0 && (
+                        {((activeTab === 'all') || (activeTab === 'available')) && regularProducts.length > 0 && (
                             <div id="productos-stock">
                                 <div className="flex items-center gap-3 mb-6">
                                     <div className="bg-green-100 text-green-700 p-2 rounded-lg">
@@ -268,8 +335,21 @@ const Home = () => {
                                     <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">{regularProducts.length}</span>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                                    {regularProducts.map(renderProductCard)}
+                                    {paginatedRegular.map(renderProductCard)}
                                 </div>
+
+                                <Pagination
+                                    page={currentPage}
+                                    totalPages={totalRegularPages}
+                                    onChange={(p) => {
+                                        setCurrentPage(p);
+                                        // update URL param so it's shareable
+                                        const params = new URLSearchParams(Array.from(searchParams.entries()));
+                                        if (searchQuery) params.set('search', searchQuery);
+                                        params.set('page', String(p));
+                                        navigate(`/?${params.toString()}`);
+                                    }}
+                                />
                             </div>
                         )}
 
@@ -321,7 +401,7 @@ const Home = () => {
                         )}
 
                         {/* Preorder Products */}
-                        {preorderProducts.length > 0 && (
+                        {((activeTab === 'all') || (activeTab === 'preorder')) && preorderProducts.length > 0 && (
                             <div id="productos-preventa">
                                 <div className="bg-accent-600 rounded-2xl p-6 mb-6 text-white shadow-lg shadow-accent-200">
                                     <div className="flex items-center gap-3">
@@ -365,6 +445,23 @@ const Home = () => {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Floating CTA for mobile to quickly jump to preorders */}
+            {preorderProducts.length > 0 && activeTab !== 'preorder' && (
+                <button
+                    onClick={() => {
+                        // jump to preorder section smoothly
+                        const el = document.getElementById('productos-preventa');
+                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        setActiveTab('preorder');
+                        const params = new URLSearchParams(Array.from(searchParams.entries()));
+                        params.set('tab', 'preorder');
+                        navigate(`/?${params.toString()}`);
+                    }}
+                    className="fixed right-4 bottom-6 z-40 bg-accent-500 text-white px-4 py-3 rounded-full shadow-lg hover:shadow-2xl md:hidden">
+                    Ver Pre-Venta ({preorderProducts.length})
+                </button>
             )}
         </div>
     );

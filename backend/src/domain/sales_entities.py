@@ -23,8 +23,9 @@ class SalesOrder:
     shipping_address: Optional[str] = None
     delivery_date: Optional[datetime] = None
     status: str = "PENDING"  # PENDING, COMPLETED, CANCELLED
+    stripe_session_id: Optional[str] = None
     id: UUID = field(default_factory=uuid4)
     created_at: datetime = field(default_factory=get_local_time)
-    
+
     product_name: Optional[str] = None
     product_image: Optional[str] = None
