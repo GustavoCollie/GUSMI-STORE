@@ -9,6 +9,9 @@ from uuid import uuid4
 import stripe
 
 
+import logging
+logger = logging.getLogger(__name__)
+
 ECOMMERCE_FRONTEND_URL = os.getenv("ECOMMERCE_FRONTEND_URL", "https://gusmi-store-public.vercel.app")
 _MOCK_SESSIONS = {}  # Store mock metadata in memory for dev simulation
 
@@ -37,8 +40,6 @@ class StripeService:
         # Log configuration setup (safely)
         frontend_url = os.getenv("ECOMMERCE_FRONTEND_URL", "https://gusmi-store-public.vercel.app")
         backend_url = os.getenv("BACKEND_URL", "https://backend-icaimporta.vercel.app")
-        import logging
-        logger = logging.getLogger(__name__)
         logger.info(f"StripeService: is_mock={is_mock}, frontend={frontend_url}, backend={backend_url}")
 
         if is_mock:
