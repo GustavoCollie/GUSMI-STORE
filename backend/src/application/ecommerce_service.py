@@ -177,9 +177,15 @@ class EcommerceService:
             if apply_discount:
                 unit_price = unit_price * (1 - DISCOUNT_RATE)
 
-            subtotal = unit_price * quantity
-            tax = subtotal * IGV_RATE
-            item_total = subtotal + tax
+            # Fix: unit_price is final (tax included)
+            # We explicitly want total_amount to match what the customer paid
+            item_total = unit_price * quantity
+            
+            # Back-calculate subtotal and tax from the total
+            # total = subtotal * (1 + IGV_RATE)
+            # subtotal = total / (1 + IGV_RATE)
+            subtotal = item_total / (1 + IGV_RATE)
+            tax = item_total - subtotal
 
             order = SalesOrder(
                 id=uuid4(),
