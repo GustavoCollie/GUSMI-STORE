@@ -140,9 +140,11 @@ const Checkout = () => {
                 window.location.href = result.checkout_url;
             } else {
                 console.warn("Sin checkout_url, asumiendo sesión mock exitosa.");
-                clearCart();
-                alert('¡Pedido realizado con éxito! Redirigiendo...');
-                navigate('/');
+                // Instead of redirecting to home, we should ideally go to success page or handled locally
+                // but let's keep it minimal for now but DO NOT clear cart and redirect if it's just a warning
+                // Actually, if it's a mock session and no URL, we might need to handle it.
+                // The user said it sends them to home, let's fix that.
+                navigate('/order-confirmation?session_id=mock_session_' + Date.now());
             }
         } catch (err) {
             console.error("Error en checkout:", err);
@@ -166,14 +168,14 @@ const Checkout = () => {
                     </p>
                     <div className="space-y-3">
                         <button
-                            onClick={() => navigate('/login')}
+                            onClick={() => navigate('/login', { state: { from: '/checkout' } })}
                             className="w-full flex items-center justify-center py-3.5 px-6 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition-all shadow-lg shadow-primary-200"
                         >
                             <LogIn className="w-5 h-5 mr-2" />
                             Iniciar Sesion
                         </button>
                         <button
-                            onClick={() => navigate('/register')}
+                            onClick={() => navigate('/register', { state: { from: '/checkout' } })}
                             className="w-full flex items-center justify-center py-3.5 px-6 bg-gray-900 text-white rounded-xl font-semibold hover:bg-gray-800 transition-all"
                         >
                             <UserPlus className="w-5 h-5 mr-2" />

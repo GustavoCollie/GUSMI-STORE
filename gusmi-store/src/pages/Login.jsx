@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useCustomerAuth } from '../context/CustomerAuthContext';
 import { LogIn, Mail, Lock, AlertCircle, ArrowRight } from 'lucide-react';
 
@@ -9,6 +9,9 @@ const Login = () => {
     const [loading, setLoading] = useState(false);
     const { login } = useCustomerAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+
+    const from = location.state?.from || '/';
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -20,7 +23,7 @@ const Login = () => {
         setError(null);
         try {
             await login(formData);
-            navigate('/');
+            navigate(from, { replace: true });
         } catch (err) {
             setError(err.message || 'Error al iniciar sesión');
         } finally {
