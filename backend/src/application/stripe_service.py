@@ -100,26 +100,38 @@ class StripeService:
                     "quantity": item["quantity"],
                 })
 
-        session = stripe.checkout.Session.create(
-            payment_method_types=["card"],
-            line_items=line_items,
-            mode="payment",
-            customer_email=customer_email,
-            success_url=f"{ECOMMERCE_FRONTEND_URL}/order-confirmation?session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url=f"{ECOMMERCE_FRONTEND_URL}/cart",
-            metadata={
-                "customer_email": customer_email,
-                "customer_name": customer_name,
-                "apply_discount": str(apply_discount),
-                "shipping_type": shipping_type,
-                "shipping_address": shipping_address,
-                "items_json": str([
-                    {"product_id": str(i["product_id"]), "quantity": i["quantity"],
-                     "unit_price": str(i["unit_price"]), "product_name": i["product_name"]}
-                    for i in items
-                ]),
-            },
-        )
+        try:
+            # Metadata values are limited to 500 characters in Stripe
+            items_json = str([
+                {"product_id": str(i["product_id"]), "quantity": i["quantity"],
+                 "unit_price": str(i["unit_price"]), "product_name": i["product_name"][:30]} # truncate name to save space
+                for i in items
+            ])
+            if len(items_json) > 500:
+                items_json = items_json[:497] + "..."
+
+            session = stripe.checkout.Session.create(
+                payment_method_types=["card"],
+                line_items=line_items,
+                mode="payment",
+                customer_email=customer_email,
+                success_url=f"{ECOMMERCE_FRONTEND_URL}/order-confirmation?session_id={{CHECKOUT_SESSION_ID}}",
+                cancel_url=f"{ECOMMERCE_FRONTEND_URL}/cart",
+                metadata={
+                    "customer_email": customer_email,
+                    "customer_name": customer_name[:40], # limit name length
+                    "apply_discount": str(apply_discount),
+                    "shipping_type": shipping_type,
+                    "shipping_address": shipping_address[:400], # limit address length
+                    "items_json": items_json,
+                },
+            )
+        except stripe.error.StripeError as e:
+            logger.error(f"Stripe API error: {e}")
+            raise ValueError(f"Error de Stripe: {e.user_message or str(e)}")
+        except Exception as e:
+            logger.error(f"Unexpected error creating Stripe session: {e}", exc_info=True)
+            raise ValueError(f"Error inesperado al procesar el pago: {str(e)}")
 
         return {"session_id": session.id, "checkout_url": session.url}
 

@@ -222,13 +222,29 @@ else:
 async def global_exception_handler(request: Request, exc: Exception):
     """Global exception handler for unexpected errors."""
     logger.error(f"Unexpected error: {exc}", exc_info=True)
+    
+    # Add CORS headers to the response so frontend can read it
+    origin = request.headers.get("origin")
+    headers = {}
+    if origin:
+        # Check if origin is allowed
+        raw_origins = os.getenv("ALLOWED_ORIGINS", "")
+        allowed_origins = [o.strip() for o in raw_origins.split(",") if o.strip()]
+        import re
+        vercel_preview_regex = re.compile(r"https://.*\.vercel\.app")
+        
+        if origin in allowed_origins or vercel_preview_regex.match(origin):
+            headers["Access-Control-Allow-Origin"] = origin
+            headers["Access-Control-Allow-Credentials"] = "true"
+
     return JSONResponse(
         status_code=500,
         content={
             "error": "Internal Server Error",
             "message": str(exc),
             "type": type(exc).__name__
-        }
+        },
+        headers=headers
     )
 
 from fastapi.exceptions import RequestValidationError
