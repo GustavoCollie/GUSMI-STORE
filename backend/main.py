@@ -144,26 +144,53 @@ async def log_requests(request: Request, call_next):
     return response
 
 # Configure CORS with dynamic origins
-raw_origins = os.getenv("ALLOWED_ORIGINS", "")
+raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:5174")
 origins = [o.strip() for o in raw_origins.split(",") if o.strip()]
-
-# Default local origins for development
-if not origins:
-    origins = ["http://localhost:5173", "http://localhost:5174", "https://gusmi-store.vercel.app"]
-
 logger.info(f"CORS configured for origins: {origins}")
-
-# Allow all Vercel preview deployments by regex
-# Format: https://project-name-git-branch-username.vercel.app
-vercel_preview_regex = r"https://.*\.vercel\.app"
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # More permissive for public API
+    allow_origins=[],  # handled dynamically below
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Dynamic CORS middleware to accept configured origins and all *.vercel.app previews
+import re
+vercel_preview_regex = re.compile(r"https://.*\.vercel\.app")
+
+
+@app.middleware("http")
+async def dynamic_cors_middleware(request, call_next):
+    origin = request.headers.get("origin")
+    allowed = False
+    if origin:
+        if origin in origins:
+            allowed = True
+        elif vercel_preview_regex.match(origin):
+            allowed = True
+
+    # Handle preflight directly
+    if request.method == "OPTIONS":
+        from fastapi.responses import Response
+        headers = {}
+        if allowed:
+            headers.update({
+                "Access-Control-Allow-Origin": origin,
+                "Access-Control-Allow-Credentials": "true",
+                "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+                "Access-Control-Allow-Headers": request.headers.get("access-control-request-headers", "*"),
+            })
+        return Response(status_code=204, headers=headers)
+
+    response = await call_next(request)
+    if allowed and origin:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers.setdefault("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS")
+        response.headers.setdefault("Access-Control-Allow-Headers", "Authorization,Content-Type,Accept,Origin")
+    return response
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
